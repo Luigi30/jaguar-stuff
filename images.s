@@ -1,8 +1,4 @@
 	.data
-
-	.phrase
-_gameover::
-	.incbin "gameover.raw"
 	
 	.phrase
 ; Converted with 'Jaguar image converter' (version 0.1.7) by Seb/The Removers
