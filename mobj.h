@@ -3,6 +3,9 @@
 
 #include <stdio.h>
 #include <jaglib.h>
+#include <jagcore.h>
+
+#include "images.h"
 
 /* Animation */
 typedef struct mobj_animation_frame_t {
@@ -31,8 +34,11 @@ typedef struct mobj_t {
 	uint64_t objType;
 } MotionObject;
 
-extern MotionObject *motionObjects;
+MotionObject *MOBJ_Alloc();
+void MOBJ_Free(MotionObject *mobj);
 
 void MOBJ_Print_Position(MOBJ_Position pos);
+
+MotionObject *MOBJ_Bee_Create(uint16_t x, uint16_t y, void *linkObject);
 
 #endif

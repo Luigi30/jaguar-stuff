@@ -3,8 +3,8 @@ BINFILE = hello.jag
 BINPATH = bin/
 OBJPATH = obj/
 
-OBJFILES = $(OBJPATH)hello.o $(OBJPATH)screen.o $(OBJPATH)mobj.o $(OBJPATH)images.o
-IMAGES = images/bee-wings1.raw images/bee-wings2.raw
+OBJFILES = $(OBJPATH)hello.o $(OBJPATH)blitline.o $(OBJPATH)screen.o $(OBJPATH)cube.o $(OBJPATH)mobj.o $(OBJPATH)images.o
+IMAGES = images/bee-wings1.s images/bee-wings2.s images/beelogo.s
 
 VJAGFOLDER = /cygdrive/e/virtualjaguar/
 
@@ -13,7 +13,7 @@ DOCKER = docker run --rm -v c:/jaguar/hello:/usr/src/compile --workdir /usr/src/
 CC = vc
 AS = vasmjagrisc_madmac
 JAGINCLUDE = /opt/jagdev/targets/m68k-jaguar/include
-CONVERT = tools/converter/converter.exe --target-dir images/ --opt-clut --clut
+CONVERT = tools/converter/converter.exe --target-dir images/ 
 
 .PHONY: clean
 
@@ -33,12 +33,18 @@ run:
 $(OBJPATH)%.o: %.c
 	$(DOCKER) $(CC) +jaguar -c -c99 -o $@ $?
 
+$(OBJPATH)%.o: %.asm
+	$(DOCKER) $(CC) +jaguar -c -c99 -o $@ $?
+
 $(OBJPATH)%.o: %.s
 	$(DOCKER) $(AS) $? -I$(JAGINCLUDE) -Fvobj -mgpu -o $@
 
 #Images
-images/bee-wings1.raw: images/bee-wings1.png
-	$(CONVERT) $?
+images/bee-wings1.s: images/bee-wings1.png
+	$(CONVERT) --opt-clut --clut $?
 
-images/bee-wings2.raw: images/bee-wings2.png
-	$(CONVERT) $?
+images/bee-wings2.s: images/bee-wings2.png
+	$(CONVERT) --opt-clut --clut $?
+
+images/beelogo.s: images/beelogo.png
+	$(CONVERT) -rgb $? 

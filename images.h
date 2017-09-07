@@ -3,5 +3,6 @@
 
 extern uint8_t bee_frame1[];
 extern uint8_t bee_frame2[];
+extern uint8_t beelogo[];
 
 #endif

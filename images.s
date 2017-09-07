@@ -9,9 +9,13 @@ _bee_pal::
 	dc.w	$0000, $B5AC, $1085, $DEF7, $294A, $BDEE, $D432, $1085, $CB2E, $AAA7, $BA2B, $8A61, $7A1D, $69D8, $A9E7, $2109
 
 	.phrase
-_bee_frame1::
+_beelogo::		;RGB16
+	.include "images/beelogo.s"
+	
+	.phrase
+_bee_frame1::	;4bpp
 	.include "images/bee-wings1.s"
 	
 	.phrase
-_bee_frame2::
+_bee_frame2::	;4bpp
 	.include "images/bee-wings2.s"
