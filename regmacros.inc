@@ -15,7 +15,8 @@ VIDDEST		.equr	r6
 
 LOADTEMP	.equr	r7
 
-RETURNADDR	.equr	r31
+JUMPADDR	.equr	r8
+RETURNADDR	.equr	r9
 	
 ;Macros
 	.macro LoadValue val, reg

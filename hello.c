@@ -37,19 +37,37 @@ void gpu_draw_horizontal_line(uint32_t x1, uint32_t x2, uint32_t y, uint32_t col
 	//printf("gpu_draw_horizontal_line()\n");
 	line_x1_value = x1;
 	line_x2_value = x2;
-	line_y_value = y;
+	line_y1_value = y;
 	line_clut_color = color;
 	jag_gpu_load(G_RAM, draw_something, draw_something_end-draw_something);
 	jag_gpu_go((uint32_t *)G_RAM, 0);
 	jag_gpu_wait();
 }
 
+void gpu_blit_line(uint32_t x1, uint32_t x2, uint32_t y1, uint32_t y2, uint32_t color)
+{
+	printf("gpu_blit_line\n");
+	line_x1_value = x1;
+	line_x2_value = x2;
+	line_y1_value = y1;
+	line_y2_value = y2;
+	line_clut_color = color;
+	
+	printf("(x1,y1): %u,%u\n", line_x1_value, line_y1_value);
+	printf("(x2,y2): %u,%u\n", line_x2_value, line_y2_value);
+	
+	jag_gpu_load(G_RAM, blit_line, blit_line_end-blit_line);
+	jag_gpu_go((uint32_t *)G_RAM, 0);
+	jag_gpu_wait();
+}
+
+
 int main() {
 	//Kick off these calculations while setting up the CPU
 	gpu_create_scanline_table();
 	
 	//Clear screen
-	jag_memset32(jag_vidmem, 1, (320*200)/4, 0);
+	//jag_memset32(jag_vidmem, 1, (320*200)/4, 0);
 	
 	srand(time(NULL));
 	
@@ -60,7 +78,6 @@ int main() {
 	/* STOP object ends the object list */
 	op_stop_object *stopobj = make_stopobj();
 
-	
 	/* Bee */
 	mobj_bee_5 = MOBJ_Bee_Create((16+rand())%320, (64+(rand()%200)), stopobj);
 	mobj_bee_4 = MOBJ_Bee_Create((16+rand())%320, (64+(rand()%200)), mobj_bee_5->graphic);
@@ -98,9 +115,6 @@ int main() {
 	
 	//Start the list here.
 	jag_append_olp(mobj_bee->graphic);
-		
-	//GPU stuff
-	jag_memset32(jag_vidmem, 1, (SCREEN_WIDTH*SCREEN_HEIGHT)/4, FILL_LONG_WITH_BYTE(COLOR_SKYBLUE));
 	
 	//Color 16: Blue sky
 	jag_set_indexed_color(16, toRgb16(0, 0, 127));
@@ -111,13 +125,24 @@ int main() {
 	}
 	
 	jag_gpu_wait(); //Make sure the GPU is done before starting to draw the scene.
+	//BLIT_rectangle_solid(jag_vidmem, 320, 200, COLOR_SKYBLUE);
+	
 	for(int i=0;i<32;i++){
 		gpu_draw_horizontal_line(0, 319, 168+i, 32+i);
 	}
 	
 	uint32_t stick0, stick0_lastread;
-	
 	uint16_t framecounter = 0;
+	
+	gpu_blit_line(0, 0, 100, 0, 1);
+	printf("val1: %u\n", line_x1_value);
+	printf("val2: %u\n", line_x2_value);
+	
+	BLIT_line(jag_vidmem, 160, 60, 200, 100, 1);
+	BLIT_line(jag_vidmem, 120, 100, 160, 140, 1);
+	
+	BLIT_line(jag_vidmem, 120, 100, 160, 60, 1);
+	BLIT_line(jag_vidmem, 160, 140, 200, 100, 1);
 	
 	while(true) {		
 		jag_wait_vbl();
@@ -196,6 +221,6 @@ int main() {
 		
 		stick0_lastread = stick0;
 		
-		MOBJ_Print_Position(mobj_bee->position);
+		//MOBJ_Print_Position(mobj_bee);
 	}
 }

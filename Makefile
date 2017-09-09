@@ -3,7 +3,7 @@ BINFILE = hello.jag
 BINPATH = bin/
 OBJPATH = obj/
 
-OBJFILES = $(OBJPATH)hello.o $(OBJPATH)blitline.o $(OBJPATH)screen.o $(OBJPATH)cube.o $(OBJPATH)mobj.o $(OBJPATH)images.o
+OBJFILES = $(OBJPATH)hello.o $(OBJPATH)blit.o $(OBJPATH)screen.o $(OBJPATH)cube.o $(OBJPATH)mobj.o $(OBJPATH)images.o
 IMAGES = images/bee-wings1.s images/bee-wings2.s images/beelogo.s
 
 VJAGFOLDER = /cygdrive/e/virtualjaguar/
@@ -20,7 +20,7 @@ CONVERT = tools/converter/converter.exe --target-dir images/
 all: build
 
 build:	$(IMAGES) $(OBJFILES)
-	$(DOCKER) $(CC) -v +jaguar -o $(BINPATH)$(BINFILE) $(OBJFILES)
+	$(DOCKER) $(CC) -v +jaguar.cfg -o $(BINPATH)$(BINFILE) $(OBJFILES)
 
 clean:
 	-rm obj/*
@@ -31,10 +31,10 @@ run:
 	$(VJAGFOLDER)virtualjaguar.exe C:\jaguar\hello\bin\hello.jag
 
 $(OBJPATH)%.o: %.c
-	$(DOCKER) $(CC) +jaguar -c -c99 -o $@ $?
+	$(DOCKER) $(CC) +jaguar.cfg -c -c99 -o $@ $?
 
 $(OBJPATH)%.o: %.asm
-	$(DOCKER) $(CC) +jaguar -c -c99 -o $@ $?
+	$(DOCKER) $(CC) +jaguar.cfg -c -c99 -o $@ $?
 
 $(OBJPATH)%.o: %.s
 	$(DOCKER) $(AS) $? -I$(JAGINCLUDE) -Fvobj -mgpu -o $@

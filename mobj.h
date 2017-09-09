@@ -16,6 +16,7 @@ typedef struct mobj_animation_frame_t {
 
 MOBJ_Animation_Frame *AnimationFrame_Create(MOBJ_Animation_Frame *_next, uint16_t _framecounter_mod, uint8_t *_pixel_data);
 
+/* MOBJ */
 typedef struct mobj_position_t {
 	int16_t x, y;
 } MOBJ_Position;
@@ -34,11 +35,14 @@ typedef struct mobj_t {
 	uint64_t objType;
 } MotionObject;
 
+//Alloc and free
 MotionObject *MOBJ_Alloc();
 void MOBJ_Free(MotionObject *mobj);
 
-void MOBJ_Print_Position(MOBJ_Position pos);
+//Debugging
+void MOBJ_Print_Position(MotionObject *mobj);
 
+//Bees
 MotionObject *MOBJ_Bee_Create(uint16_t x, uint16_t y, void *linkObject);
 
 #endif

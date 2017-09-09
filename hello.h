@@ -7,11 +7,9 @@
 #include <string.h>
 #include <time.h>
 
+#include "blit.h"
 #include "images.h"
 #include "mobj.h"
-
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 200
 
 #define FILL_LONG_WITH_BYTE(b) (b<<24 | b<<16 | b<<8 | b)
 
@@ -32,12 +30,18 @@ extern uint8_t create_scanline_table[];
 extern uint8_t create_scanline_table_end[];
 
 void gpu_draw_horizontal_line(uint32_t x1, uint32_t x2, uint32_t y, uint32_t color);
+
 extern uint8_t draw_something[];
 extern uint8_t draw_something_end[];
 
+void gpu_blit_line(uint32_t x1, uint32_t x2, uint32_t y1, uint32_t y2, uint32_t color);
+extern uint8_t blit_line[];
+extern uint8_t blit_line_end[];
+
 uint32_t line_x1_value;
 uint32_t line_x2_value;
-uint32_t line_y_value;
+uint32_t line_y1_value;
+uint32_t line_y2_value;
 uint32_t line_clut_color;
 
 //Filled in by the GPU. Each entry is the pixel offset of the scanline N.

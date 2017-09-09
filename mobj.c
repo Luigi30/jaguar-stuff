@@ -1,10 +1,11 @@
 #include "mobj.h"
 
-void MOBJ_Print_Position(MOBJ_Position pos) {
+//Debugging
+void MOBJ_Print_Position(MotionObject *mobj) {
 	jag_console_set_cursor(0,0);
-	printf("X: %4d", pos.x);
+	printf("X: %4d", mobj->position.x);
 	jag_console_set_cursor(0,8);
-	printf("Y: %4d", pos.y);
+	printf("Y: %4d", mobj->position.y);
 }
 
 MOBJ_Animation_Frame *AnimationFrame_Create(MOBJ_Animation_Frame *_next, uint16_t _framecounter_mod, uint8_t *_pixel_data)
@@ -18,7 +19,7 @@ MOBJ_Animation_Frame *AnimationFrame_Create(MOBJ_Animation_Frame *_next, uint16_
 	return frame;
 }
 
-/* Alloc/Free */
+/* Alloc and free */
 MotionObject *MOBJ_Alloc() {
 	return calloc(1, sizeof(MotionObject));
 }
