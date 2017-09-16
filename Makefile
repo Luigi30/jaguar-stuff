@@ -3,7 +3,7 @@ BINFILE = hello.jag
 BINPATH = bin/
 OBJPATH = obj/
 
-OBJFILES = $(OBJPATH)hello.o $(OBJPATH)blit.o $(OBJPATH)screen.o $(OBJPATH)cube.o $(OBJPATH)mobj.o $(OBJPATH)images.o
+OBJFILES = $(OBJPATH)hello.o $(OBJPATH)fixed.o $(OBJPATH)matrix.o $(OBJPATH)dsp_matrix.o $(OBJPATH)blit.o $(OBJPATH)screen.o $(OBJPATH)cube.o $(OBJPATH)mobj.o $(OBJPATH)images.o
 IMAGES = images/bee-wings1.s images/bee-wings2.s images/beelogo.s
 
 VJAGFOLDER = /cygdrive/e/virtualjaguar/
@@ -28,7 +28,7 @@ clean:
 
 run:
 	#Adjust this path to your configuration.
-	$(VJAGFOLDER)virtualjaguar.exe C:\jaguar\hello\bin\hello.jag
+	$(VJAGFOLDER)virtualjaguar.exe --alpine C:\jaguar\hello\bin\hello.jag
 
 $(OBJPATH)%.o: %.c
 	$(DOCKER) $(CC) +jaguar.cfg -c -c99 -o $@ $?
@@ -36,8 +36,11 @@ $(OBJPATH)%.o: %.c
 $(OBJPATH)%.o: %.asm
 	$(DOCKER) $(CC) +jaguar.cfg -c -c99 -o $@ $?
 
-$(OBJPATH)%.o: %.s
+$(OBJPATH)%.o: %.tom.s
 	$(DOCKER) $(AS) $? -I$(JAGINCLUDE) -Fvobj -mgpu -o $@
+	
+$(OBJPATH)%.o: %.jerry.s
+	$(DOCKER) $(AS) $? -I$(JAGINCLUDE) -Fvobj -mdsp -o $@
 
 #Images
 images/bee-wings1.s: images/bee-wings1.png

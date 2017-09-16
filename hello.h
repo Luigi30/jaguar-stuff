@@ -7,6 +7,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "matrix.h"
 #include "blit.h"
 #include "images.h"
 #include "mobj.h"
@@ -28,11 +29,6 @@ extern uint8_t blank_screen_end[];
 
 extern uint8_t create_scanline_table[];
 extern uint8_t create_scanline_table_end[];
-
-void gpu_draw_horizontal_line(uint32_t x1, uint32_t x2, uint32_t y, uint32_t color);
-
-extern uint8_t draw_something[];
-extern uint8_t draw_something_end[];
 
 void gpu_blit_line(uint32_t x1, uint32_t x2, uint32_t y1, uint32_t y2, uint32_t color);
 extern uint8_t blit_line[];

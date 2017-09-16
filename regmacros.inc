@@ -31,4 +31,11 @@ RETURNADDR	.equr	r9
 		nop
 		nop
 	.endm
-	
+
+	.macro	StopDSP
+		moveq	#0,TEMP1		; Stop DSP
+		movei	#D_CTRL,TEMP2
+		store	TEMP1,(TEMP2)
+		nop
+		nop
+	.endm
