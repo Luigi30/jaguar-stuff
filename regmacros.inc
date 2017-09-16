@@ -1,8 +1,8 @@
-;Equates
+; Equates
 BMP_WIDTH	.equ	320
 BMP_HEIGHT	.equ	200
 
-;Registers we want to be consistent with
+; Registers we want to be consistent with
 TEMP1		.equr	r0
 TEMP2		.equr	r1
 

@@ -133,12 +133,43 @@ int main() {
 	uint32_t stick0, stick0_lastread;
 	uint16_t framecounter = 0;
 
-	jag_dsp_load(D_RAM, matrix_identity_set, matrix_identity_set_end-matrix_identity_set);
-	jag_dsp_go((uint32_t *)D_RAM, 0);
+	for(int row=0;row<4;row++){
+	  for(int col=0;col<4;col++){
+	    dsp_matrix_operand_1.data[row][col] = 0x00010000 * (row + col);
+	    dsp_matrix_operand_2.data[row][col] = 0x00020000 * (row + col);
+	  }
+	}
+
+	//printf("%p\n", D_RAM);
+       	//printf("%p\n", dsp_matrix_functions);
+	//printf("%p\n", matrix_add);
+	//printf("%p\n", matrix_add_end);
+	//printf("%p\n", dsp_matrix_functions_end);
+	//printf("%p\n", DSP_FUNCTION_OFFSET(matrix_add));
+	
+	DSP_FUNCTION_LOAD(dsp_matrix_sub);
+	DSP_FUNCTION_GO(D_RAM);
+	
+	//jag_dsp_load(D_RAM, dsp_matrix_functions, dsp_matrix_functions_end-dsp_matrix_functions);
+	//jag_dsp_go(DSP_FUNCTION_OFFSET(matrix_add), 0);
 	jag_dsp_wait();
 
-	//printf("%08X %08X %08X %08X\n", dsp_matrix_local.data[0][0], dsp_matrix_local.data[0][1], dsp_matrix_local.data[0][2], dsp_matrix_local.data[0][3]);
+       	for(int i=0;i<4;i++){
+	  printf("%08X %08X %08X %08X\n", dsp_matrix_operand_1.data[i][0], dsp_matrix_operand_1.data[i][1], dsp_matrix_operand_1.data[i][2], dsp_matrix_operand_1.data[i][3]);
+	}
 
+	printf("\n");
+
+       	for(int i=0;i<4;i++){
+	  printf("%08X %08X %08X %08X\n", dsp_matrix_operand_2.data[i][0], dsp_matrix_operand_2.data[i][1], dsp_matrix_operand_2.data[i][2], dsp_matrix_operand_2.data[i][3]);
+	}
+
+	printf("\n");
+	
+	for(int i=0;i<4;i++){
+	  printf("%08X %08X %08X %08X\n", dsp_matrix_result.data[i][0], dsp_matrix_result.data[i][1], dsp_matrix_result.data[i][2], dsp_matrix_result.data[i][3]);
+	}
+	  
 	Vector3FX translated[4];
 	for(int i=0; i<4; i++){
 	  translated[i] = (Vector3FX) { .x = square.vertexes[i].x + square.translation.x, .y = square.vertexes[i].y + square.translation.y, .z = square.vertexes[i].z + square.translation.z };
