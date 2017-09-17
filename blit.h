@@ -10,10 +10,10 @@
 #include <string.h>
 #include <time.h>
 
+#include "shared.h"
 #include "fixed.h"
 
 #define BLIT_XY(x,y) ( (vuint32_t)( (y << 16) | x ) )
-#define MMIO32(x)   (*(vuint32_t *)(x))
 
 #define SWAP(T, a, b) do { T tmp = a; a = b; b = tmp; } while (0)
 

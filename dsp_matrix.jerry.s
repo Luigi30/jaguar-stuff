@@ -145,8 +145,8 @@ _dsp_matrix_sub::
 .subtraction_loop:
 	load	(PTR_INDEX+PTR_MATRIX_1),TEMP1
 	load	(PTR_INDEX+PTR_MATRIX_2),TEMP2
-	sub	TEMP1,TEMP2
-	store	TEMP2,(PTR_INDEX+PTR_MATRIX_R)
+	sub	TEMP2,TEMP1
+	store	TEMP1,(PTR_INDEX+PTR_MATRIX_R)
 
 	addq	#SIZE_UINT32,PTR_INDEX
 
@@ -159,6 +159,8 @@ _dsp_matrix_sub::
 
 	.68000
 _dsp_matrix_sub_end::
+
+_dsp_matrix_functions_end::
 	
 	.long
 _dsp_matrix_operand_1::	dcb.l	16,$AA55AA55
@@ -166,5 +168,4 @@ _dsp_matrix_operand_2:: dcb.l	16,$AA55AA55
 _dsp_matrix_result::	dcb.l	16,$AA55AA55
 
 	.68000
-	
-_dsp_matrix_functions_end::
+

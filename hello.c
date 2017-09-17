@@ -55,8 +55,25 @@ void gpu_blit_line(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, uint32_t 
   jag_gpu_go((uint32_t *)G_RAM, 0);
 }
 
+/* DSP management functions */
+void DSP_LOAD_MATRIX_PROGRAM() {
+  jag_dsp_load(D_RAM, dsp_matrix_functions, dsp_matrix_functions_end-dsp_matrix_functions);
+}
+
+void DSP_START(uint8_t *function) {
+  uint32_t calculated_pc = 0xF1B000 + (uint32_t)(function - dsp_matrix_functions);
+  MMIO32(D_PC) = calculated_pc;
+  printf("DSP running from 0x%08X\n", calculated_pc);
+  MMIO32(D_CTRL) = MMIO32(D_CTRL) | 0x01;
+}
+
+#define DSP_WAIT() ( jag_dsp_wait() )
+
+/* End DSP management functions */
 
 int main() {
+  DSP_LOAD_MATRIX_PROGRAM();
+  
   //Kick off these calculations while setting up the CPU
   gpu_create_scanline_table();
   srand(time(NULL));
@@ -136,22 +153,18 @@ int main() {
 	for(int row=0;row<4;row++){
 	  for(int col=0;col<4;col++){
 	    dsp_matrix_operand_1.data[row][col] = 0x00010000 * (row + col);
-	    dsp_matrix_operand_2.data[row][col] = 0x00020000 * (row + col);
+	    dsp_matrix_operand_2.data[row][col] = 0x00030000 * (row + col);
 	  }
 	}
 
-	//printf("%p\n", D_RAM);
-       	//printf("%p\n", dsp_matrix_functions);
-	//printf("%p\n", matrix_add);
-	//printf("%p\n", matrix_add_end);
-	//printf("%p\n", dsp_matrix_functions_end);
-	//printf("%p\n", DSP_FUNCTION_OFFSET(matrix_add));
+	printf("%p\n", D_RAM);
+       	printf("%p\n", dsp_matrix_functions);
+	printf("%p\n", dsp_matrix_add);
+	printf("%p\n", dsp_matrix_add_end);
+	printf("%p\n", dsp_matrix_functions_end);
+	printf("%p\n", (uint32_t)dsp_matrix_sub);
 	
-	DSP_FUNCTION_LOAD(dsp_matrix_sub);
-	DSP_FUNCTION_GO(D_RAM);
-	
-	//jag_dsp_load(D_RAM, dsp_matrix_functions, dsp_matrix_functions_end-dsp_matrix_functions);
-	//jag_dsp_go(DSP_FUNCTION_OFFSET(matrix_add), 0);
+	DSP_START(dsp_matrix_sub);
 	jag_dsp_wait();
 
        	for(int i=0;i<4;i++){
@@ -169,7 +182,7 @@ int main() {
 	for(int i=0;i<4;i++){
 	  printf("%08X %08X %08X %08X\n", dsp_matrix_result.data[i][0], dsp_matrix_result.data[i][1], dsp_matrix_result.data[i][2], dsp_matrix_result.data[i][3]);
 	}
-	  
+
 	Vector3FX translated[4];
 	for(int i=0; i<4; i++){
 	  translated[i] = (Vector3FX) { .x = square.vertexes[i].x + square.translation.x, .y = square.vertexes[i].y + square.translation.y, .z = square.vertexes[i].z + square.translation.z };

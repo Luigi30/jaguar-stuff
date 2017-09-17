@@ -7,6 +7,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "shared.h"
+
 #include "matrix.h"
 #include "blit.h"
 #include "images.h"
