@@ -52,3 +52,4 @@ MotionObject *mobj_bee_4;
 MotionObject *mobj_bee_5;
 
 MotionObject mobj_logo;
+MotionObject mobj_buttbot;

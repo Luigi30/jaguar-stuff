@@ -17,7 +17,7 @@
 
 #define SWAP(T, a, b) do { T tmp = a; a = b; b = tmp; } while (0)
 
-void BLIT_rectangle_solid(uint8_t *buffer, uint16_t width, uint16_t height, uint16_t color_index);
+void BLIT_rectangle_solid(uint8_t *buffer, uint16_t topleft_x, uint16_t topleft_y, uint16_t width, uint16_t height, uint16_t color_index);
 void BLIT_line(uint8_t *buffer, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color_index);
 
 #endif

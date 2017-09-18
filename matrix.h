@@ -32,9 +32,16 @@ extern uint8_t dsp_matrix_sub_end[];
 extern Matrix44 *dsp_matrix_ptr_m1;
 extern Matrix44 *dsp_matrix_ptr_m2;
 
+/* Matrix operand storage */
 extern Matrix44 dsp_matrix_operand_1;
 extern Matrix44 dsp_matrix_operand_2;
 extern Matrix44 dsp_matrix_result;
+extern Vector3FX dsp_matrix_vector;
+
+/* Vector operand storage */
+extern Vector3FX dsp_vector_operand_1;
+extern Vector3FX dsp_vector_operand_2;
+extern Vector3FX dsp_vector_result;
 
 //C functions, some of which call DSP functions
 Matrix44 *Matrix44_Alloc();

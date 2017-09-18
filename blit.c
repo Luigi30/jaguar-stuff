@@ -1,9 +1,9 @@
 #include "blit.h"
 
-void BLIT_rectangle_solid(uint8_t *buffer, uint16_t width, uint16_t height, uint16_t color_index)
+void BLIT_rectangle_solid(uint8_t *buffer, uint16_t topleft_x, uint16_t topleft_y, uint16_t width, uint16_t height, uint16_t color_index)
 {
 	MMIO32(A1_BASE)		= (long)buffer;
-	MMIO32(A1_PIXEL)	= BLIT_XY(0, 0);
+	MMIO32(A1_PIXEL)	= BLIT_XY(topleft_x, topleft_y);
 	MMIO32(A1_FPIXEL)	= 0;
 	MMIO32(A1_INC)		= BLIT_XY(1, 0);
 	MMIO32(A1_FINC)		= 0;

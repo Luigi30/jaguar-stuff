@@ -4,7 +4,7 @@ BINPATH = bin/
 OBJPATH = obj/
 
 OBJFILES = $(OBJPATH)hello.o $(OBJPATH)fixed.o $(OBJPATH)matrix.o $(OBJPATH)dsp_matrix.o $(OBJPATH)blit.o $(OBJPATH)screen.o $(OBJPATH)cube.o $(OBJPATH)mobj.o $(OBJPATH)images.o
-IMAGES = images/bee-wings1.s images/bee-wings2.s images/beelogo.s
+IMAGES = images/bee-wings1.s images/bee-wings2.s images/beelogo.s images/graphic.s images/buttbot.s images/butttext.s
 
 VJAGFOLDER = /cygdrive/e/virtualjaguar/
 
@@ -51,3 +51,12 @@ images/bee-wings2.s: images/bee-wings2.png
 
 images/beelogo.s: images/beelogo.png
 	$(CONVERT) -rgb $? 
+
+images/graphic.s: images/graphic.png
+	$(CONVERT) --opt-clut --clut $? 
+
+images/buttbot.s: images/buttbot.png
+	$(CONVERT) --opt-clut --clut $? 
+	
+images/butttext.s: images/butttext.bmp
+	$(CONVERT) --opt-clut --clut $? 
