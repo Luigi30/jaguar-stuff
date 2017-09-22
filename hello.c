@@ -183,7 +183,7 @@ int main() {
     jag_wait_vbl();
     
     //clear_video_buffer();
-    //jag_memset32(jag_vidmem, 1, (320*200)/4, 0);
+    jag_memset32(jag_vidmem, 1, (320*200)/4, 0);
     //jag_wait_blitter_ready();
 
     framecounter = (framecounter + 1) % 60;
@@ -288,7 +288,6 @@ int main() {
 	else if((mobj_buttbot.position.x % 20) == 1) {
 	  mobj_buttbot.position.y -= 2;
 	}
-
       }
 	
       mobj_buttbot.graphic->p0.ypos = mobj_buttbot.position.y;
@@ -326,7 +325,7 @@ int main() {
     gpu_blit_line(transformedVertexList[2].x, transformedVertexList[2].y, transformedVertexList[3].x, transformedVertexList[3].y, 19);
     jag_gpu_wait();
     gpu_blit_line(transformedVertexList[3].x, transformedVertexList[3].y, transformedVertexList[0].x, transformedVertexList[0].y, 19);
-    
+
     //MOBJ_Print_Position(mobj_bee);
   }
 }

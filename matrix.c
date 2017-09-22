@@ -12,10 +12,24 @@ void Matrix44_Free(Matrix44 *m){
 }
 
 void Matrix44_Identity(Matrix44 *m){
+	for(int row=0;row<4;row++){
+		for(int col=0;col<4;col++){
+			if(row == col) {
+				m->data[row][col] = 0x00010000;	
+			}
+			else {
+				m->data[row][col] = 0;
+			}
+		}
+	}
+	
+	/*
 	DSP_START(dsp_matrix_identity_set);
 	jag_dsp_wait();
 	
 	memcpy(m, &dsp_matrix_result, sizeof(Matrix44));
+	*/
+	
 }
 
 void Matrix44_Multiply_Matrix44(Matrix44 *left, Matrix44 *right, Matrix44 *result)
