@@ -3,7 +3,7 @@ BINFILE = hello.jag
 BINPATH = bin/
 OBJPATH = obj/
 
-OBJFILES = $(OBJPATH)hello.o $(OBJPATH)fixed.o $(OBJPATH)matrix.o $(OBJPATH)dsp_matrix.o $(OBJPATH)blit.o $(OBJPATH)screen.o $(OBJPATH)cube.o $(OBJPATH)mobj.o $(OBJPATH)images.o
+OBJFILES = $(OBJPATH)hello.o $(OBJPATH)tetris.o $(OBJPATH)matrix.o $(OBJPATH)fixed.o $(OBJPATH)dsp_matrix.o $(OBJPATH)blit.o $(OBJPATH)screen.o $(OBJPATH)cube.o $(OBJPATH)mobj.o $(OBJPATH)images.o $(OBJPATH)dsp.o
 IMAGES = images/bee-wings1.s images/bee-wings2.s images/beelogo.s images/graphic.s images/buttbot.s images/butttext.s
 
 VJAGFOLDER = /cygdrive/e/virtualjaguar/
@@ -20,7 +20,7 @@ CONVERT = tools/converter/converter.exe --target-dir images/
 all: build
 
 build:	$(IMAGES) $(OBJFILES)
-	$(DOCKER) $(CC) -v +jaguar.cfg -o $(BINPATH)$(BINFILE) $(OBJFILES)
+	$(DOCKER) $(CC) -v -O0 +jaguar.cfg -lm -o $(BINPATH)$(BINFILE) $(OBJFILES)
 
 clean:
 	-rm obj/*

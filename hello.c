@@ -1,5 +1,9 @@
 #include "hello.h"
 
+#include "fixed.h"
+
+#define VECTOR3FX_CREATE(a,b,c) (Vector3FX){ .x = INT_TO_FIXED(a), .y = INT_TO_FIXED(b), .z = INT_TO_FIXED(c) };
+
 typedef struct shape_t {
   Vector3FX translation, rotation, scale;
   Vector3FX *vertexes;
@@ -8,85 +12,84 @@ typedef struct shape_t {
 extern uint16_t bee_pal[16];
 
 op_stop_object *make_stopobj() {	
-	op_stop_object *stopobj = calloc(1,sizeof(op_stop_object));
-	stopobj->type = STOPOBJ;
-	stopobj->int_flag = 1;
-	return stopobj;
+  op_stop_object *stopobj = calloc(1,sizeof(op_stop_object));
+  stopobj->type = STOPOBJ;
+  stopobj->int_flag = 1;
+  return stopobj;
 }
 
 uint16_t jag_custom_interrupt_handler()
 {
-	if (*INT1&C_VIDENA)
-	{
-		/* The height field needs to be reset each frame for each mobj. Thanks Atari. */
-		mobj_bee->graphic->p0.height = 32;
-		mobj_bee_2->graphic->p0.height = 32;
-		mobj_bee_3->graphic->p0.height = 32;
-		mobj_bee_4->graphic->p0.height = 32;
-		mobj_bee_5->graphic->p0.height = 32;
-		
-		mobj_buttbot.graphic->p0.height = 32;
-	}
-	return 0;
+  if (*INT1&C_VIDENA)
+    {
+      //The height field needs to be reset each frame for each mobj. Thanks Atari.
+      mobj_bee->graphic->p0.height = 32;
+      mobj_buttbot.graphic->p0.height = 32;
+
+      mobj_bee->graphic->p0.data   = (uint32_t)mobj_bee->currentAnimation->pixel_data >> 3;	  
+      mobj_buttbot.graphic->p0.data = (uint32_t)mobj_buttbot.currentAnimation->pixel_data >> 3;
+    }
+  else {
+    printf("Some other interrupt?\n");
+  }
+  return 0;
 }
 
 void gpu_create_scanline_table()
 {
-	//printf("gpu_create_scanline_table()\n");	
-	jag_gpu_load(G_RAM, create_scanline_table, create_scanline_table_end-create_scanline_table);
-	jag_gpu_go((uint32_t *)G_RAM, 0);
+  //printf("gpu_create_scanline_table()\n");	
+  jag_gpu_load(G_RAM, create_scanline_table, create_scanline_table_end-create_scanline_table);
+  jag_gpu_go((uint32_t *)G_RAM, 0);
+}
+
+void clear_video_buffer(){
+  BLIT_rectangle_solid(jag_vidmem, 0, 0, 320, 200, 0);
 }
 
 void gpu_blit_line(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, uint32_t color)
 {
   jag_gpu_wait(); //wait for any operations in progress to finish
-
+  
   line_x1_value = x1;
   line_x2_value = x2;
   line_y1_value = y1;
   line_y2_value = y2;
   line_clut_color = color;
 
+  jag_wait_blitter_ready();
   jag_gpu_load(G_RAM, blit_line, blit_line_end-blit_line);
   jag_gpu_go((uint32_t *)G_RAM, 0);
 }
-
-/* DSP management functions */
-void DSP_LOAD_MATRIX_PROGRAM() {
-  jag_dsp_load(D_RAM, dsp_matrix_functions, dsp_matrix_functions_end-dsp_matrix_functions);
-}
-
-void DSP_START(uint8_t *function) {
-  uint32_t calculated_pc = 0xF1B000 + (uint32_t)(function - dsp_matrix_functions);
-  MMIO32(D_PC) = calculated_pc;
-  //printf("DSP running from 0x%08X\n", calculated_pc);
-  MMIO32(D_CTRL) = MMIO32(D_CTRL) | 0x01;
-}
-
-#define DSP_WAIT() ( jag_dsp_wait() )
-
-/* End DSP management functions */
 
 int main() {
   DSP_LOAD_MATRIX_PROGRAM();
   
   //Kick off these calculations while setting up the CPU
   gpu_create_scanline_table();
-  srand(time(NULL));
-	
+
   //Create the square thingy
   Shape square;
-  square.translation = (Vector3FX){ .x = 160, .y = 100, .z = 0 };
-  square.rotation = (Vector3FX){ .x = 0, .y = 0, .z = 0 };
+  square.translation = (Vector3FX){ .x = INT_TO_FIXED(160), .y = INT_TO_FIXED(150), .z = INT_TO_FIXED(0) };
+  square.rotation = (Vector3FX){ .x = INT_TO_FIXED(0), .y = INT_TO_FIXED(0), .z = INT_TO_FIXED(0) };
   square.scale = (Vector3FX){ .x = INT_TO_FIXED(1), .y = INT_TO_FIXED(1), .z = INT_TO_FIXED(1) };
 
   Vector3FX vertexList[4];
-  vertexList[0] = (Vector3FX){ .x = -20, .y = -20, .z = 0 };
-  vertexList[1] = (Vector3FX){ .x =  20, .y = -20, .z = 0 };
-  vertexList[2] = (Vector3FX){ .x =  20, .y =  20, .z = 0 };
-  vertexList[3] = (Vector3FX){ .x = -20, .y =  20, .z = 0 };
+  vertexList[0] = VECTOR3FX_CREATE(-20, -20, 0);
+  vertexList[1] = VECTOR3FX_CREATE( 20, -20, 0);
+  vertexList[2] = VECTOR3FX_CREATE( 20,  20, 0);
+  vertexList[3] = VECTOR3FX_CREATE(-20,  20, 0);
   square.vertexes = vertexList;
 
+  /*
+  for(int i=0;i<4;i++){
+    FIXED_PRINT(rotation.data[i][0]);
+    FIXED_PRINT(rotation.data[i][1]);
+    FIXED_PRINT(rotation.data[i][2]);
+    FIXED_PRINT(rotation.data[i][3]);
+    printf("\n");
+  }
+  */
+  
   //Set up the palette for the bee
   for(int i=0;i<16;i++){
     jag_set_indexed_color(i, bee_pal[i]);
@@ -133,6 +136,7 @@ int main() {
   
   //Start the list here.
   jag_append_olp(mobj_bee->graphic);
+  //jag_append_olp(stopobj);
   
   //Color bars
   jag_set_indexed_color(16, toRgb16(192, 192, 192));
@@ -161,55 +165,26 @@ int main() {
     }
   }
 
-  /*
-  printf("%p\n", D_RAM);
-  printf("%p\n", dsp_matrix_functions);
-  printf("%p\n", dsp_matrix_add);
-  printf("%p\n", dsp_matrix_add_end);
-  printf("%p\n", dsp_matrix_functions_end);
-  printf("%p\n", (uint32_t)dsp_matrix_sub);
-  */
-  
-  DSP_START(dsp_matrix_sub);
-  jag_dsp_wait();
-
-  /*
-  for(int i=0;i<4;i++){
-    printf("%08X %08X %08X %08X\n", dsp_matrix_operand_1.data[i][0], dsp_matrix_operand_1.data[i][1], dsp_matrix_operand_1.data[i][2], dsp_matrix_operand_1.data[i][3]);
-  }
-
-  printf("\n");
-
-  for(int i=0;i<4;i++){
-    printf("%08X %08X %08X %08X\n", dsp_matrix_operand_2.data[i][0], dsp_matrix_operand_2.data[i][1], dsp_matrix_operand_2.data[i][2], dsp_matrix_operand_2.data[i][3]);
-  }
-
-  printf("\n");
-	
-  for(int i=0;i<4;i++){
-    printf("%08X %08X %08X %08X\n", dsp_matrix_result.data[i][0], dsp_matrix_result.data[i][1], dsp_matrix_result.data[i][2], dsp_matrix_result.data[i][3]);
-    }
-
-  Vector3FX translated[4];
-  for(int i=0; i<4; i++){
-    translated[i] = (Vector3FX) { .x = square.vertexes[i].x + square.translation.x, .y = square.vertexes[i].y + square.translation.y, .z = square.vertexes[i].z + square.translation.z };
-  }
-  
-  gpu_blit_line(translated[0].x, translated[0].y, translated[1].x, translated[1].y, 17);
-  gpu_blit_line(translated[1].x, translated[1].y, translated[2].x, translated[2].y, 17);
-  gpu_blit_line(translated[2].x, translated[2].y, translated[3].x, translated[3].y, 17);
-  gpu_blit_line(translated[3].x, translated[3].y, translated[0].x, translated[0].y, 17);
-  */
-
   uint32_t framenumber = 0;
   uint8_t colorbar_heights[7] = {200,200,200,200,200,200,200};
 
   int animation_stage = 0;
   int endDelay = 0;
+
+  Matrix44 m, translation, rotation;
+  Vector3FX transformedVertexList[4];
+
+  Matrix44_Translation(square.translation, &translation);
   
-  while(true) {		
+  while(true) {
+    jag_wait_blitter_ready();
+    jag_gpu_wait();
+    jag_dsp_wait();
     jag_wait_vbl();
-    jag_memset32(jag_vidmem, 1, (320*200)/4, 0);
+    
+    //clear_video_buffer();
+    //jag_memset32(jag_vidmem, 1, (320*200)/4, 0);
+    //jag_wait_blitter_ready();
 
     framecounter = (framecounter + 1) % 60;
     framenumber++;
@@ -223,9 +198,6 @@ int main() {
       {
 	mobj_bee->currentAnimation = mobj_bee->currentAnimation->next;
       }
-	  
-    mobj_bee->graphic->p0.data   = (uint32_t)mobj_bee->currentAnimation->pixel_data >> 3;	  
-    mobj_buttbot.graphic->p0.data = (uint32_t)mobj_buttbot.currentAnimation->pixel_data >> 3;
 	  
     /* Triggers once per frame these are pressed */
     if(stick0_lastread & STICK_UP) {
@@ -281,6 +253,7 @@ int main() {
     jag_gpu_wait(); //Make sure the GPU is done before starting to draw the scene.
     
     //Color bar animation.
+    /*
     if(colorbar_heights[0] > 0) {
       BLIT_rectangle_solid(jag_vidmem, 10, 0, 40, colorbar_heights[0], 16);
       colorbar_heights[0] -= 1;
@@ -301,6 +274,7 @@ int main() {
 	animation_stage = 1;
       }
     }
+    */
 
     /* Stage 1: The buttbot moves */
     if(animation_stage == 1){
@@ -314,7 +288,7 @@ int main() {
 	else if((mobj_buttbot.position.x % 20) == 1) {
 	  mobj_buttbot.position.y -= 2;
 	}
-	
+
       }
 	
       mobj_buttbot.graphic->p0.ypos = mobj_buttbot.position.y;
@@ -326,6 +300,33 @@ int main() {
       mobj_bee->position.x += 2;
     }
 
+    /* 3D */
+    square.rotation.z = (square.rotation.z + 0x00010000) % 0x01680000;
+    Matrix44_Z_Rotation(square.rotation, &rotation);
+
+    Matrix44_Identity(&m);
+    Matrix44_Multiply_Matrix44(&m, &translation, &m);
+    Matrix44_Multiply_Matrix44(&m, &rotation, &m);
+  
+    for(int i=0;i<4;i++){
+      Matrix44_VectorProduct(&m, &vertexList[i], &transformedVertexList[i]);
+
+      /*
+      FIXED_PRINT(transformedVertexList[i].x);
+      printf(" ");
+      FIXED_PRINT(transformedVertexList[i].y);
+      printf("\n");
+      */
+    };
+
+    gpu_blit_line(transformedVertexList[0].x, transformedVertexList[0].y, transformedVertexList[1].x, transformedVertexList[1].y, 19);
+    jag_gpu_wait();
+    gpu_blit_line(transformedVertexList[1].x, transformedVertexList[1].y, transformedVertexList[2].x, transformedVertexList[2].y, 19);
+    jag_gpu_wait();
+    gpu_blit_line(transformedVertexList[2].x, transformedVertexList[2].y, transformedVertexList[3].x, transformedVertexList[3].y, 19);
+    jag_gpu_wait();
+    gpu_blit_line(transformedVertexList[3].x, transformedVertexList[3].y, transformedVertexList[0].x, transformedVertexList[0].y, 19);
+    
     //MOBJ_Print_Position(mobj_bee);
   }
 }

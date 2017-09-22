@@ -20,8 +20,8 @@
 	
 ;Registers for line drawing.
 	LINE_X1		.equr	r10
-	LINE_X2		.equr	r11
-	LINE_Y1		.equr	r12
+	LINE_Y1		.equr	r11
+	LINE_X2		.equr	r12
 	LINE_Y2		.equr	r13
 	PIXEL_OFFSET	.equr	r14
 	
@@ -73,12 +73,26 @@
 _blit_line::
 	.gpu
 	.org G_RAM
+
+	movei   #G_FLAGS,r1       ; Status flags
+	load    (r1),r0	
+	bset    #14,r0
+	store   r0,(r1)           ; Switch the GPU/DSP to bank 1
 	
 	LoadValue	_line_x1_value,LINE_X1
 	LoadValue	_line_x2_value,LINE_X2
 	LoadValue	_line_y1_value,LINE_Y1
 	LoadValue	_line_y2_value,LINE_Y2
 
+	shrq	#16,LINE_X1
+	shlq	#16,LINE_X1
+	shrq	#16,LINE_X2
+	shlq	#16,LINE_X2
+	shrq	#16,LINE_Y1
+	shlq	#16,LINE_Y1
+	shrq	#16,LINE_Y2
+	shlq	#16,LINE_Y2
+	
 	;; X1 > X2? Swap the points if so.
 	cmp	LINE_X1,LINE_X2
 	jr	hi,.calculateDistances
@@ -141,7 +155,12 @@ _blit_line::
 	store	TEMP1,(B_A1_BASE)
 
 	;; start blitting from (X1,Y1)
-	BLIT_XY	LINE_X1,LINE_Y1
+	move	LINE_X1,r18
+	shrq	#16,r18
+	move	LINE_Y1,r19
+	shrq	#16,r19
+	
+	BLIT_XY	r18,r19
 	store	TEMP1,(B_A1_PIXEL)
 
 	;; no fractional pixel to start
@@ -195,15 +214,25 @@ _blit_line::
 	nop
 
 .horizontal:
+	movei	#1,r5
 	move	X_DIST,PX_COUNT_X
+	shrq	#16,PX_COUNT_X
+	
 	moveq	#1,PX_COUNT_Y
 	jr	t,.copy_count
 	nop
 	
 .nothorizontal:
-	moveq	#1,PX_COUNT_X
+	movei	#2,r5
+
+*	move	X_DIST,PX_COUNT_X
+*	shrq	#16,PX_COUNT_X
+	movei	#1,PX_COUNT_X
+	
 	move	Y_DIST,PX_COUNT_Y
-	addq	#1,PX_COUNT_Y
+	shrq	#16,PX_COUNT_Y
+	
+*	addq	#1,PX_COUNT_Y
 
 .copy_count:
 	BLIT_XY	PX_COUNT_X,PX_COUNT_Y

@@ -1,53 +1,31 @@
 #ifndef MATRIX_H
 #define MATRIX_H
 
-#define DSP_FUNCTION_LOAD(X) jag_dsp_load(D_RAM, X, X ## _end - X );
-#define DSP_FUNCTION_GO(X) jag_dsp_go((uint32_t *)X, 0);
-#define DSP_FUNCTION_OFFSET(X) ( (uint32_t *)(0xF1B000 + (dsp_matrix_functions_end - X)) )
-
 #include <jagcore.h>
 #include <jaglib.h>
 
+#include <math.h>
 #include <string.h>
 
+#include "dsp.h"
 #include "fixed.h"
 
 typedef struct matrix44_t {
   FIXED_32 data[4][4];
 } Matrix44;
 
-//DSP functions under matrix.h's purvew
-extern uint8_t dsp_matrix_identity_set[];
-extern uint8_t dsp_matrix_identity_set_end[];
-
-extern uint8_t dsp_matrix_functions[];
-extern uint8_t dsp_matrix_functions_end[];
-
-extern uint8_t dsp_matrix_add[];
-extern uint8_t dsp_matrix_add_end[];
-
-extern uint8_t dsp_matrix_sub[];
-extern uint8_t dsp_matrix_sub_end[];
-
-extern Matrix44 *dsp_matrix_ptr_m1;
-extern Matrix44 *dsp_matrix_ptr_m2;
-
-/* Matrix operand storage */
-extern Matrix44 dsp_matrix_operand_1;
-extern Matrix44 dsp_matrix_operand_2;
-extern Matrix44 dsp_matrix_result;
-extern Vector3FX dsp_matrix_vector;
-
-/* Vector operand storage */
-extern Vector3FX dsp_vector_operand_1;
-extern Vector3FX dsp_vector_operand_2;
-extern Vector3FX dsp_vector_result;
-
 //C functions, some of which call DSP functions
 Matrix44 *Matrix44_Alloc();
 void Matrix44_Free(Matrix44 *m);
-
 void Matrix44_Identity(Matrix44 *m);
+
+void Matrix44_Multiply_Matrix44(Matrix44 *left, Matrix44 *right, Matrix44 *result);
+void Matrix44_VectorProduct(Matrix44 *matrix, Vector3FX *vector, Vector3FX *destination);
+
+void Matrix44_Translation(Vector3FX translation, Matrix44 *result);
+void Matrix44_Rotation(Vector3FX rotation, Matrix44 *result);
+
+void Matrix44_Z_Rotation(Vector3FX rotation, Matrix44 *result);
 
 extern Matrix44 MATRIX_PRESET_IDENTITY;
 

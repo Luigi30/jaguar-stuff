@@ -7,8 +7,10 @@
 #include <string.h>
 #include <time.h>
 
+#include "dsp.h"
 #include "shared.h"
 
+#include "tetris.h"
 #include "matrix.h"
 #include "blit.h"
 #include "images.h"
@@ -46,10 +48,6 @@ uint32_t line_clut_color;
 uint32_t scanline_offset_table[200];
 
 MotionObject *mobj_bee;
-MotionObject *mobj_bee_2;
-MotionObject *mobj_bee_3;
-MotionObject *mobj_bee_4;
-MotionObject *mobj_bee_5;
 
 MotionObject mobj_logo;
 MotionObject mobj_buttbot;
