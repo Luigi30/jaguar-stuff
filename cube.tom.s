@@ -9,7 +9,7 @@
 ;   %00101:   HI   greater than
 
 	.include "jaguar.inc"
-	.globl	_background_pixels
+	.globl	_back_buffer
 	.globl	_scanline_offset_table
 	
 	;all FIXED_32
@@ -113,8 +113,8 @@ _blit_line::
 	abs	X_DIST
 	
 	move	LINE_Y2,Y_DIST
-	sub		LINE_Y1,Y_DIST
-	abs		Y_DIST
+	sub	LINE_Y1,Y_DIST
+	abs	Y_DIST
 		
 	;Slope calculation.
 .calculate_slope:
@@ -151,7 +151,8 @@ _blit_line::
 
 ;Write to these registers.
 	;; buffer is at background_pixels
-	movei	#_background_pixels,TEMP1
+	movei	#_back_buffer,TEMP1
+	load	(TEMP1),TEMP1
 	move	TEMP1,r5
 	store	TEMP1,(B_A1_BASE)
 	

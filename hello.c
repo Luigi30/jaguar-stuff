@@ -31,7 +31,7 @@ uint16_t jag_custom_interrupt_handler()
 
       mobj_bee->graphic->p0.data   = (uint32_t)mobj_bee->currentAnimation->pixel_data >> 3;	  
       mobj_buttbot.graphic->p0.data = (uint32_t)mobj_buttbot.currentAnimation->pixel_data >> 3;
-      mobj_background.graphic->p0.data = (uint32_t)background_pixels >> 3;
+      mobj_background.graphic->p0.data = (uint32_t)front_buffer >> 3;
 
       MMIO16(INT2) = 0;
       return C_VIDCLR;
@@ -76,8 +76,8 @@ void gpu_create_scanline_table()
   jag_gpu_go((uint32_t *)G_RAM, 0);
 }
 
-void clear_video_buffer(){
-  BLIT_rectangle_solid(background_pixels, 0, 0, 320, 200, 0);
+void clear_video_buffer(uint8_t *buffer){
+  BLIT_rectangle_solid(buffer, 0, 0, 320, 200, 0);
 }
 
 void gpu_blit_line(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, uint32_t color)
@@ -97,13 +97,13 @@ void gpu_blit_line(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, uint32_t 
 
 int main() {
   jag_console_hide();
+  front_buffer = background_frame_0;
+  back_buffer = background_frame_1;
   
   DSP_LOAD_MATRIX_PROGRAM();
   
   //Kick off these calculations while setting up the CPU
   gpu_create_scanline_table();
-
-  memset(background_pixels, 0, 320*200);
 
   //Create the square thingy
   Shape square;
@@ -153,7 +153,7 @@ int main() {
     mobj_background.graphic->p0.ypos	= mobj_background.position.y;   /* YPOS = Y position on screen "in half-lines" */
     mobj_background.graphic->p0.height  = mobj_background.pxHeight;	/* in pixels */
     mobj_background.graphic->p0.link	= (uint32_t)stopobj >> 3;	/* link to next object */
-    mobj_background.graphic->p0.data	= (uint32_t)background_pixels >> 3;	/* ptr to pixel data */
+    mobj_background.graphic->p0.data	= (uint32_t)front_buffer >> 3;	/* ptr to pixel data */
     
     mobj_background.graphic->p1.xpos	= mobj_background.position.x;      /* X position on screen, -2048 to 2047 */
     mobj_background.graphic->p1.depth	= O_DEPTH8 >> 12;		/* pixel depth of object */
@@ -247,8 +247,20 @@ int main() {
   */
   
   while(true) {
+
+    if(front_buffer == background_frame_0)
+      {
+	front_buffer = background_frame_1;
+	back_buffer  = background_frame_0;
+      }
+    else
+      {
+	front_buffer = background_frame_0;
+	back_buffer  = background_frame_1;
+      }
+    
     jag_wait_vbl();
-    clear_video_buffer();
+    clear_video_buffer(back_buffer);
     
     framecounter = (framecounter + 1) % 60;
     framenumber++;

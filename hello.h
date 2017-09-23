@@ -18,7 +18,10 @@
 
 #define FILL_LONG_WITH_BYTE(b) (b<<24 | b<<16 | b<<8 | b)
 
-uint8_t background_pixels[320*200];
+uint8_t background_frame_0[320*200];
+uint8_t background_frame_1[320*200];
+uint8_t *front_buffer;
+uint8_t *back_buffer;
 
 const uint8_t COLOR_SKYBLUE = 16;
 
