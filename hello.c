@@ -18,22 +18,56 @@ op_stop_object *make_stopobj() {
   return stopobj;
 }
 
+bool vbl_flag = false;
+
 uint16_t jag_custom_interrupt_handler()
 {
   if (*INT1&C_VIDENA)
-    {
+    {      
       //The height field needs to be reset each frame for each mobj. Thanks Atari.
       mobj_bee->graphic->p0.height = 32;
       mobj_buttbot.graphic->p0.height = 32;
+      mobj_background.graphic->p0.height = 200;
 
       mobj_bee->graphic->p0.data   = (uint32_t)mobj_bee->currentAnimation->pixel_data >> 3;	  
       mobj_buttbot.graphic->p0.data = (uint32_t)mobj_buttbot.currentAnimation->pixel_data >> 3;
+      mobj_background.graphic->p0.data = (uint32_t)background_pixels >> 3;
+
+      MMIO16(INT2) = 0;
+      return C_VIDCLR;
     }
-  else {
-    printf("Some other interrupt?\n");
-  }
   return 0;
 }
+
+/*
+void setup_video_registers()
+{
+  MMIO16(VP) = 523; //525 lines in an NTSC display
+  MMIO16(VS) = 517; //VSYNC position
+
+  MMIO16(VEB)= 511; //equalization begins
+  MMIO16(VEE)= 6;   //equalization length
+
+  MMIO16(VBB)= 436; //VBLANK begins
+  MMIO16(VBE)= 24;  //VBLANK length
+
+  MMIO16(VDB)= 46;  //200 visible lines
+  MMIO16(VDE)= 496;
+
+  MMIO16(VI) = 437;
+  
+  //Half-line registers
+  MMIO16(HP) = 845;
+  
+  MMIO16(HBE)= 122;
+  MMIO16(HBB)= 0x400;
+
+  MMIO16(HDB1) = 245;
+  MMIO16(HDB2) = 245;
+
+  MMIO16(HDE) = (845 + 600 - 1) | 0x400;
+}
+*/
 
 void gpu_create_scanline_table()
 {
@@ -43,7 +77,7 @@ void gpu_create_scanline_table()
 }
 
 void clear_video_buffer(){
-  BLIT_rectangle_solid(jag_vidmem, 0, 0, 320, 200, 0);
+  BLIT_rectangle_solid(background_pixels, 0, 0, 320, 200, 0);
 }
 
 void gpu_blit_line(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, uint32_t color)
@@ -62,16 +96,20 @@ void gpu_blit_line(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, uint32_t 
 }
 
 int main() {
+  jag_console_hide();
+  
   DSP_LOAD_MATRIX_PROGRAM();
   
   //Kick off these calculations while setting up the CPU
   gpu_create_scanline_table();
 
+  memset(background_pixels, 0, 320*200);
+
   //Create the square thingy
   Shape square;
-  square.translation = (Vector3FX){ .x = INT_TO_FIXED(160), .y = INT_TO_FIXED(150), .z = INT_TO_FIXED(0) };
-  square.rotation = (Vector3FX){ .x = INT_TO_FIXED(0), .y = INT_TO_FIXED(0), .z = INT_TO_FIXED(0) };
-  square.scale = (Vector3FX){ .x = INT_TO_FIXED(1), .y = INT_TO_FIXED(1), .z = INT_TO_FIXED(1) };
+  square.translation = (Vector3FX){ .x = INT_TO_FIXED(160), .y = INT_TO_FIXED(100), .z = INT_TO_FIXED(0) };
+  square.rotation    = (Vector3FX){ .x = INT_TO_FIXED(0), .y = INT_TO_FIXED(0), .z = INT_TO_FIXED(0) };
+  square.scale       = (Vector3FX){ .x = INT_TO_FIXED(1), .y = INT_TO_FIXED(1), .z = INT_TO_FIXED(1) };
 
   Vector3FX vertexList[4];
   vertexList[0] = VECTOR3FX_CREATE(-20, -20, 0);
@@ -102,6 +140,31 @@ int main() {
   /* STOP object ends the object list */
   op_stop_object *stopobj = make_stopobj();
 
+  /* Background */
+  {
+    mobj_background.graphic = calloc(1,sizeof(op_bmp_object));
+    mobj_background.objType = BITOBJ;
+    mobj_background.position.x = 19;
+    mobj_background.position.y = 80;
+    mobj_background.pxWidth = 320;
+    mobj_background.pxHeight = 200;
+    
+    mobj_background.graphic->p0.type	= mobj_background.objType;	/* BITOBJ = bitmap object */
+    mobj_background.graphic->p0.ypos	= mobj_background.position.y;   /* YPOS = Y position on screen "in half-lines" */
+    mobj_background.graphic->p0.height  = mobj_background.pxHeight;	/* in pixels */
+    mobj_background.graphic->p0.link	= (uint32_t)stopobj >> 3;	/* link to next object */
+    mobj_background.graphic->p0.data	= (uint32_t)background_pixels >> 3;	/* ptr to pixel data */
+    
+    mobj_background.graphic->p1.xpos	= mobj_background.position.x;      /* X position on screen, -2048 to 2047 */
+    mobj_background.graphic->p1.depth	= O_DEPTH8 >> 12;		/* pixel depth of object */
+    mobj_background.graphic->p1.pitch	= 1;				/* 8 * PITCH is added to each fetch */
+    mobj_background.graphic->p1.dwidth  = mobj_background.pxWidth / 8;	/* pixel data width in 8-byte phrases */
+    mobj_background.graphic->p1.iwidth  = mobj_background.pxWidth / 8;	/* image width in 8-byte phrases, for clipping */	
+    mobj_background.graphic->p1.release= 0;				/* bus mastering, set to 1 when low-depth */
+    mobj_background.graphic->p1.trans  = 1;				/* makes color 0 transparent */
+    mobj_background.graphic->p1.index  = 0;
+  }
+  
   /* Logo */
   {
     mobj_buttbot.graphic = calloc(1,sizeof(op_bmp_object));
@@ -135,7 +198,8 @@ int main() {
   mobj_bee   = MOBJ_Bee_Create(100, 100, mobj_buttbot.graphic);
   
   //Start the list here.
-  jag_append_olp(mobj_bee->graphic);
+  jag_attach_olp(mobj_background.graphic);
+  //jag_append_olp(mobj_bee->graphic);
   //jag_append_olp(stopobj);
   
   //Color bars
@@ -175,17 +239,17 @@ int main() {
   Vector3FX transformedVertexList[4];
 
   Matrix44_Translation(square.translation, &translation);
+
+  /*
+  for(int i=0;i<64000;i++){
+    background_pixels[i] = 16;
+  }
+  */
   
   while(true) {
-    jag_wait_blitter_ready();
-    jag_gpu_wait();
-    jag_dsp_wait();
     jag_wait_vbl();
+    clear_video_buffer();
     
-    //clear_video_buffer();
-    jag_memset32(jag_vidmem, 1, (320*200)/4, 0);
-    //jag_wait_blitter_ready();
-
     framecounter = (framecounter + 1) % 60;
     framenumber++;
 	  
@@ -249,8 +313,6 @@ int main() {
       }
 	  
     stick0_lastread = stick0;
-	  
-    jag_gpu_wait(); //Make sure the GPU is done before starting to draw the scene.
     
     //Color bar animation.
     /*
@@ -311,10 +373,10 @@ int main() {
       Matrix44_VectorProduct(&m, &vertexList[i], &transformedVertexList[i]);
 
       /*
-      FIXED_PRINT(transformedVertexList[i].x);
-      printf(" ");
-      FIXED_PRINT(transformedVertexList[i].y);
-      printf("\n");
+	FIXED_PRINT(transformedVertexList[i].x);
+	printf(" ");
+	FIXED_PRINT(transformedVertexList[i].y);
+	printf("\n");
       */
     };
 
@@ -325,7 +387,7 @@ int main() {
     gpu_blit_line(transformedVertexList[2].x, transformedVertexList[2].y, transformedVertexList[3].x, transformedVertexList[3].y, 19);
     jag_gpu_wait();
     gpu_blit_line(transformedVertexList[3].x, transformedVertexList[3].y, transformedVertexList[0].x, transformedVertexList[0].y, 19);
-
+    
     //MOBJ_Print_Position(mobj_bee);
   }
 }

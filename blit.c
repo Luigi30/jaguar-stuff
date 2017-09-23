@@ -7,7 +7,8 @@ void BLIT_rectangle_solid(uint8_t *buffer, uint16_t topleft_x, uint16_t topleft_
 	MMIO32(A1_FPIXEL)	= 0;
 	MMIO32(A1_INC)		= BLIT_XY(1, 0);
 	MMIO32(A1_FINC)		= 0;
-	MMIO32(A1_FLAGS)	= PITCH1 | PIXEL8 | WID320 | XADDPIX | YADD0;
+	//MMIO32(A1_FLAGS)	= PITCH1 | PIXEL8 | WID320 | XADDPIX | YADD0;
+	MMIO32(A1_FLAGS)	= PITCH1 | PIXEL8 | WID320 | XADDPHR | YADD0;
 	MMIO32(A1_STEP)		= BLIT_XY(CONSOLE_BMP_WIDTH-width, 0);
 	MMIO32(B_PATD)		= color_index;
 	MMIO32(B_COUNT)		= BLIT_XY(width, height);

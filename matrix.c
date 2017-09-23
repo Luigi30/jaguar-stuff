@@ -84,8 +84,6 @@ void Matrix44_Translation(Vector3FX translation, Matrix44 *result)
 
 void Matrix44_Z_Rotation(Vector3FX rotation, Matrix44 *result)
 {
-	jag_gpu_wait();
-	
 	uint16_t zDeg = (rotation.z >> 16) % 360;
 	
 	Matrix44_Identity(result);
@@ -99,8 +97,6 @@ void Matrix44_Z_Rotation(Vector3FX rotation, Matrix44 *result)
 	
 void Matrix44_Rotation(Vector3FX rotation, Matrix44 *result)
 {
-	jag_gpu_wait();
-	
 	FIXED_32 xDeg, yDeg, zDeg;
 	xDeg = (rotation.x >> 16) % 360;
 	yDeg = (rotation.y >> 16) % 360;
@@ -138,8 +134,6 @@ void Matrix44_Rotation(Vector3FX rotation, Matrix44 *result)
 
 void Matrix44_VectorProduct(Matrix44 *matrix, Vector3FX *vector, Vector3FX *destination)
 {
-	jag_gpu_wait();
-	
 	//w = 0 for rotate in space
 	//w = 1 for move in space
 	

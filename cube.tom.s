@@ -9,10 +9,11 @@
 ;   %00101:   HI   greater than
 
 	.include "jaguar.inc"
-	.globl	_jag_vidmem
+	.globl	_background_pixels
 	.globl	_scanline_offset_table
 	
-	.globl _line_x1_value	;all uint32_t
+	;all FIXED_32
+	.globl _line_x1_value
 	.globl _line_x2_value
 	.globl _line_y1_value
 	.globl _line_y2_value
@@ -112,8 +113,8 @@ _blit_line::
 	abs	X_DIST
 	
 	move	LINE_Y2,Y_DIST
-	sub	LINE_Y1,Y_DIST
-	abs	Y_DIST
+	sub		LINE_Y1,Y_DIST
+	abs		Y_DIST
 		
 	;Slope calculation.
 .calculate_slope:
@@ -149,11 +150,11 @@ _blit_line::
 	movei	#B_CMD,B_B_CMD
 
 ;Write to these registers.
-	;; buffer is at jag_vidmem
-	movei	#_jag_vidmem,TEMP1
-	load	(TEMP1),TEMP1
+	;; buffer is at background_pixels
+	movei	#_background_pixels,TEMP1
+	move	TEMP1,r5
 	store	TEMP1,(B_A1_BASE)
-
+	
 	;; start blitting from (X1,Y1)
 	move	LINE_X1,r18
 	shrq	#16,r18
@@ -214,7 +215,6 @@ _blit_line::
 	nop
 
 .horizontal:
-	movei	#1,r5
 	move	X_DIST,PX_COUNT_X
 	shrq	#16,PX_COUNT_X
 	
@@ -223,8 +223,6 @@ _blit_line::
 	nop
 	
 .nothorizontal:
-	movei	#2,r5
-
 *	move	X_DIST,PX_COUNT_X
 *	shrq	#16,PX_COUNT_X
 	movei	#1,PX_COUNT_X
