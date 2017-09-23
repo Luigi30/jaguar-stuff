@@ -39,39 +39,8 @@ uint16_t jag_custom_interrupt_handler()
   return 0;
 }
 
-/*
-void setup_video_registers()
-{
-  MMIO16(VP) = 523; //525 lines in an NTSC display
-  MMIO16(VS) = 517; //VSYNC position
-
-  MMIO16(VEB)= 511; //equalization begins
-  MMIO16(VEE)= 6;   //equalization length
-
-  MMIO16(VBB)= 436; //VBLANK begins
-  MMIO16(VBE)= 24;  //VBLANK length
-
-  MMIO16(VDB)= 46;  //200 visible lines
-  MMIO16(VDE)= 496;
-
-  MMIO16(VI) = 437;
-  
-  //Half-line registers
-  MMIO16(HP) = 845;
-  
-  MMIO16(HBE)= 122;
-  MMIO16(HBB)= 0x400;
-
-  MMIO16(HDB1) = 245;
-  MMIO16(HDB2) = 245;
-
-  MMIO16(HDE) = (845 + 600 - 1) | 0x400;
-}
-*/
-
 void gpu_create_scanline_table()
-{
-  //printf("gpu_create_scanline_table()\n");	
+{	
   jag_gpu_load(G_RAM, create_scanline_table, create_scanline_table_end-create_scanline_table);
   jag_gpu_go((uint32_t *)G_RAM, 0);
 }
@@ -108,25 +77,15 @@ int main() {
   //Create the square thingy
   Shape square;
   square.translation = (Vector3FX){ .x = INT_TO_FIXED(160), .y = INT_TO_FIXED(100), .z = INT_TO_FIXED(0) };
-  square.rotation    = (Vector3FX){ .x = INT_TO_FIXED(0), .y = INT_TO_FIXED(0), .z = INT_TO_FIXED(0) };
+  square.rotation    = (Vector3FX){ .x = INT_TO_FIXED(0), .y = INT_TO_FIXED(0), .z = INT_TO_FIXED(1) };
   square.scale       = (Vector3FX){ .x = INT_TO_FIXED(1), .y = INT_TO_FIXED(1), .z = INT_TO_FIXED(1) };
 
   Vector3FX vertexList[4];
-  vertexList[0] = VECTOR3FX_CREATE(-20, -20, 0);
-  vertexList[1] = VECTOR3FX_CREATE( 20, -20, 0);
-  vertexList[2] = VECTOR3FX_CREATE( 20,  20, 0);
-  vertexList[3] = VECTOR3FX_CREATE(-20,  20, 0);
+  vertexList[0] = VECTOR3FX_CREATE(-50, -50, 0);
+  vertexList[1] = VECTOR3FX_CREATE( 50, -50, 0);
+  vertexList[2] = VECTOR3FX_CREATE( 50,  50, 0);
+  vertexList[3] = VECTOR3FX_CREATE(-50,  50, 0);
   square.vertexes = vertexList;
-
-  /*
-  for(int i=0;i<4;i++){
-    FIXED_PRINT(rotation.data[i][0]);
-    FIXED_PRINT(rotation.data[i][1]);
-    FIXED_PRINT(rotation.data[i][2]);
-    FIXED_PRINT(rotation.data[i][3]);
-    printf("\n");
-  }
-  */
   
   //Set up the palette for the bee
   for(int i=0;i<16;i++){
@@ -239,12 +198,6 @@ int main() {
   Vector3FX transformedVertexList[4];
 
   Matrix44_Translation(square.translation, &translation);
-
-  /*
-  for(int i=0;i<64000;i++){
-    background_pixels[i] = 16;
-  }
-  */
   
   while(true) {
 
@@ -374,7 +327,7 @@ int main() {
     }
 
     /* 3D */
-    square.rotation.z = (square.rotation.z + 0x00010000) % 0x01680000;
+    //square.rotation.z = (square.rotation.z + 0x00010000) % 0x01680000;
     Matrix44_Z_Rotation(square.rotation, &rotation);
 
     Matrix44_Identity(&m);
@@ -384,6 +337,9 @@ int main() {
     for(int i=0;i<4;i++){
       Matrix44_VectorProduct(&m, &vertexList[i], &transformedVertexList[i]);
 
+      MMIO32(0x40000+(0x10*i)) = transformedVertexList[i].x;
+      MMIO32(0x40004+(0x10*i)) = transformedVertexList[i].y;
+      
       /*
 	FIXED_PRINT(transformedVertexList[i].x);
 	printf(" ");
@@ -392,6 +348,14 @@ int main() {
       */
     };
 
+    for(int i=0;i<4;i++){
+      MMIO32(0x40100+(0x10*i)) = rotation.data[i][0];
+      MMIO32(0x40104+(0x10*i)) = rotation.data[i][1];
+      MMIO32(0x40108+(0x10*i)) = rotation.data[i][2];
+      MMIO32(0x4010A+(0x10*i)) = rotation.data[i][3];
+    }
+
+    /*
     gpu_blit_line(transformedVertexList[0].x, transformedVertexList[0].y, transformedVertexList[1].x, transformedVertexList[1].y, 19);
     jag_gpu_wait();
     gpu_blit_line(transformedVertexList[1].x, transformedVertexList[1].y, transformedVertexList[2].x, transformedVertexList[2].y, 19);
@@ -399,6 +363,12 @@ int main() {
     gpu_blit_line(transformedVertexList[2].x, transformedVertexList[2].y, transformedVertexList[3].x, transformedVertexList[3].y, 19);
     jag_gpu_wait();
     gpu_blit_line(transformedVertexList[3].x, transformedVertexList[3].y, transformedVertexList[0].x, transformedVertexList[0].y, 19);
+    */
+
+    //gpu_blit_line(0x00000000, 0x00000000, 0x00010000, 0x00640000, 19);
+    gpu_blit_line(0x00000000, 0x00000000, 0x00640000, 0x00640000, 19);
+    //gpu_blit_line(0x00000000, 0x00000000, 0x00640000, 0x00000000, 19);
+    //gpu_blit_line(0x006D0000, 0x00320000, 0x009D0000, 0x00330000, 19);
     
     //MOBJ_Print_Position(mobj_bee);
   }

@@ -85,14 +85,14 @@ _blit_line::
 	LoadValue	_line_y1_value,LINE_Y1
 	LoadValue	_line_y2_value,LINE_Y2
 
-	shrq	#16,LINE_X1
-	shlq	#16,LINE_X1
-	shrq	#16,LINE_X2
-	shlq	#16,LINE_X2
-	shrq	#16,LINE_Y1
-	shlq	#16,LINE_Y1
-	shrq	#16,LINE_Y2
-	shlq	#16,LINE_Y2
+*	shrq	#16,LINE_X1
+*	shlq	#16,LINE_X1
+*	shrq	#16,LINE_X2
+*	shlq	#16,LINE_X2
+*	shrq	#16,LINE_Y1
+*	shlq	#16,LINE_Y1
+*	shrq	#16,LINE_Y2
+*	shlq	#16,LINE_Y2
 	
 	;; X1 > X2? Swap the points if so.
 	cmp	LINE_X1,LINE_X2
@@ -170,21 +170,24 @@ _blit_line::
 	store	TEMP1,(B_A1_FPIXEL)
 
 	;; get the integer slope, store it in A1_INC
-	move	SLOPE,TEMP1
-	shrq	#16,TEMP1
-	store	TEMP1,(B_A1_INC)
-
+	move	SLOPE,TEMP1	
+	movei	#0xFFFF0000,TEMP2
+	and	TEMP2,TEMP1
+*	addq	#1,TEMP1
+	store	TEMP1,(B_A1_INC) ;save the integer slope to the Y increment
+	
 	;; get the fractional slope, store it in A1_FINC
 	move	SLOPE,TEMP1
 	movei	#$0000FFFF,TEMP2
 	and	TEMP2,TEMP1
 	store	TEMP1,(B_A1_FINC)
-
+	
 	;; 1-phrase pitch, 8-bit pixels, 320px width, XADD = 1
 	cmpq	#0,SLOPE		;is slope 0?
 	jr	eq,.slope_is_zero	;yes, add one to X per pixel instead of the slope register
 
 	;; slope is not zero
+	movei	#1,r6
 	movei	#PITCH1|PIXEL8|WID320|XADDINC,TEMP1 ;always executed
 	jr	t,.step_sign_check		    ;continue setting blitter registers
 	store	TEMP1,(B_A1_FLAGS)		    ;always executed
@@ -211,11 +214,38 @@ _blit_line::
 	load	(TEMP2),TEMP1
 	store	TEMP1,(B_B_PATD)
 
+	cmpq	#0,X_DIST
+	jr	eq,.vertical
+	nop
+
+	movei	#.nothorizontal,JUMPADDR
 	cmpq	#0,Y_DIST
-	jr	ne,.nothorizontal
+	jump	ne,(JUMPADDR)
+	nop
+	
+	movei	#.horizontal,TEMP1
+	jump	t,(TEMP1)
+	nop
+	
+.vertical:
+	movei	#1,r4
+	movei	#.copy_count,JUMPADDR
+	jump	t,(JUMPADDR)
+
+	movei	#1,PX_COUNT_X
+	move	Y_DIST,PX_COUNT_Y
+	shrq	#16,PX_COUNT_Y
+
+	;; override the step for a vertical line
+	movei	#0x00000000,TEMP1
+	store	TEMP1,(B_A1_INC)
+
+	movei	#.copy_count,JUMPADDR
+	jump	t,(JUMPADDR)
 	nop
 
 .horizontal:
+	movei	#1,r5
 	move	X_DIST,PX_COUNT_X
 	shrq	#16,PX_COUNT_X
 	
@@ -224,6 +254,7 @@ _blit_line::
 	nop
 	
 .nothorizontal:
+	movei	#2,r5
 *	move	X_DIST,PX_COUNT_X
 *	shrq	#16,PX_COUNT_X
 	movei	#1,PX_COUNT_X
@@ -231,16 +262,13 @@ _blit_line::
 	move	Y_DIST,PX_COUNT_Y
 	shrq	#16,PX_COUNT_Y
 	
-*	addq	#1,PX_COUNT_Y
+	addq	#1,PX_COUNT_Y
 
 .copy_count:
 	BLIT_XY	PX_COUNT_X,PX_COUNT_Y
 	store	TEMP1,(B_B_COUNT)
 
 	move	B_B_COUNT,TEMP1
-	
-	movei	#_line_x1_value,TEMP2
-	store	TEMP1,(TEMP2)
 	
 	movei	#PATDSEL|UPDA1|UPDA1F|LFU_S,TEMP1
 	store	TEMP1,(B_B_CMD)

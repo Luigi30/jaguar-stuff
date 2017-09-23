@@ -90,7 +90,7 @@ void Matrix44_Z_Rotation(Vector3FX rotation, Matrix44 *result)
 	
 	result->data[0][0] = FIXED_COSINE_TABLE[zDeg];
 	result->data[0][1] = FIXED_SINE_TABLE[zDeg];
-	result->data[1][0] = -FIXED_SINE_TABLE[zDeg];
+	result->data[1][0] = -(FIXED_SINE_TABLE[zDeg]);
 	result->data[1][1] = FIXED_COSINE_TABLE[zDeg];
 }
 	
@@ -138,36 +138,8 @@ void Matrix44_VectorProduct(Matrix44 *matrix, Vector3FX *vector, Vector3FX *dest
 	//w = 1 for move in space
 	
 	//const float w = 1;
-	
-	/*
-	printf("sine(45deg) %08X\n", FIXED_SINE_TABLE[45]);
-	FIXED_PRINT(FIXED_SINE_TABLE[45]);
-	FIXED_PRINT(FIXED_COSINE_TABLE[45]);
-	printf("\n");
-	
-	FIXED_32 fx_x1 = FIXED_MUL(matrix->data[0][0], vector->x);
-	FIXED_32 fx_x2 = FIXED_MUL(matrix->data[0][1], vector->x);
-	FIXED_32 fx_x3 = FIXED_MUL(matrix->data[0][2], vector->x);
-	
-	printf("data00 %08X\n", matrix->data[0][0]);
-	printf("vec  x %08X\n", vector->x);
-	printf("fx_x1  %08X\n", fx_x1);
-	FIXED_PRINT(fx_x1);
-	printf("\n");
-	*/
 
 	destination->x = FIXED_MUL(matrix->data[0][0], vector->x) + FIXED_MUL(matrix->data[0][1], vector->y) + FIXED_MUL(matrix->data[0][2], vector->z) + matrix->data[0][3]; //* w
 	destination->y = FIXED_MUL(matrix->data[1][0], vector->x) + FIXED_MUL(matrix->data[1][1], vector->y) + FIXED_MUL(matrix->data[1][2], vector->z) + matrix->data[1][3]; //* w
 	destination->z = FIXED_MUL(matrix->data[2][0], vector->x) + FIXED_MUL(matrix->data[2][1], vector->y) + FIXED_MUL(matrix->data[2][2], vector->z) + matrix->data[2][3]; //* w
-	
-	/*
-	//Normalize if required.
-	float w = (matrix->data[3][0] * vector->x) + (matrix->data[3][1] * vector->y) + (matrix->data[3][2] * vector->z) + matrix->data[3][3]; //* w
-	
-	if(w != 1) {
-		destination->x /= w;
-		destination->y /= w;
-		destination->z /= w;
-	}
-	*/
 }
