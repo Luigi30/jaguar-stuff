@@ -24,23 +24,14 @@
 	LINE_Y1		.equr	r11
 	LINE_X2		.equr	r12
 	LINE_Y2		.equr	r13
-	PIXEL_OFFSET	.equr	r14
 	
 	X_DIST		.equr	r15
 	Y_DIST		.equr	r16
-	
-	SLOPE		.equr	r17
 
-	;; pixel count
-	PX_COUNT_X	.equr	r18
-	PX_COUNT_Y	.equr	r19
-	
-	;fixed point division
-	DIV_TEMP_HI	.equr	r18
-	DIV_TEMP_LO	.equr	r19
-	DIVIDEND	.equr	r20
-	DIVISOR		.equr	r21
-	
+	DIVIDEND	.equr	r17
+	DIVISOR		.equr	r18
+	SLOPE		.equr	r19
+		
 	B_A1_BASE	.equr	r22
 	B_A1_PIXEL	.equr	r23
 	B_A1_FPIXEL	.equr	r24
@@ -85,15 +76,6 @@ _blit_line::
 	LoadValue	_line_y1_value,LINE_Y1
 	LoadValue	_line_y2_value,LINE_Y2
 
-*	shrq	#16,LINE_X1
-*	shlq	#16,LINE_X1
-*	shrq	#16,LINE_X2
-*	shlq	#16,LINE_X2
-*	shrq	#16,LINE_Y1
-*	shlq	#16,LINE_Y1
-*	shrq	#16,LINE_Y2
-*	shlq	#16,LINE_Y2
-	
 	;; X1 > X2? Swap the points if so.
 	cmp	LINE_X1,LINE_X2
 	jr	hi,.calculateDistances
@@ -115,29 +97,9 @@ _blit_line::
 	move	LINE_Y2,Y_DIST
 	sub	LINE_Y1,Y_DIST
 	abs	Y_DIST
-		
-	;Slope calculation.
-.calculate_slope:
-	;TODO: check for division by 0. In fixed point mode the result is 0xFFFFFFFF
-	move	Y_DIST,DIVIDEND
-	move	X_DIST,DIVISOR
-	
-	;Set up for 16.16 divide
-	moveq	#1,TEMP1
-	movei	#G_DIVCTRL,TEMP2
-	store	TEMP1,(TEMP2)
-	
-	div	DIVISOR,DIVIDEND	;destination / source
-	move	DIVIDEND,SLOPE		;slope = DIVISOR/DIVIDEND
-	
-	;; back to integer divide
-	moveq	#0,TEMP1
-	movei	#G_DIVCTRL,TEMP2
-	store	TEMP1,(TEMP2)
 
-.do_blit:
-
-	;Set up registers for writing
+setup_blit:	
+;; Set up registers for writing
 	movei	#A1_BASE,B_A1_BASE
 	movei	#A1_PIXEL,B_A1_PIXEL
 	movei	#A1_FPIXEL,B_A1_FPIXEL
@@ -149,136 +111,250 @@ _blit_line::
 	movei	#B_COUNT,B_B_COUNT
 	movei	#B_CMD,B_B_CMD
 
-;Write to these registers.
-	;; buffer is at background_pixels
+.preset_registers:
+	;; pre-set the blit registers
+
 	movei	#_back_buffer,TEMP1
 	load	(TEMP1),TEMP1
 	move	TEMP1,r5
 	store	TEMP1,(B_A1_BASE)
+
+	movei	#_line_clut_color,TEMP2
+	load	(TEMP2),TEMP1
+	store	TEMP1,(B_B_PATD)
+
+	movei	#0,TEMP1
+	movei	#A1_CLIP,TEMP2
+	store	TEMP1,(TEMP2)
 	
-	;; start blitting from (X1,Y1)
+.draw_line:
+	movei	#dy_greater,TEMP1
+	movei	#dx_greater,TEMP2
+	movei	#dx_equals_dy,JUMPADDR
+	cmp	X_DIST,Y_DIST
+	jump	hi,(TEMP1) 	;dy_greater
+	nop
+	cmp	X_DIST,Y_DIST
+	jump	eq,(JUMPADDR)	;dx_equals_dy
+	nop
+	jump	t,(TEMP2)	;dx_greater
+	nop
+
+dy_greater:
+	movei	#6,r6
+
+.calc_slope:
+	move	X_DIST,DIVIDEND
+	move	Y_DIST,DIVISOR
+	
+	;Set up for 16.16 divide
+	moveq	#1,TEMP1
+	movei	#G_DIVCTRL,TEMP2
+	store	TEMP1,(TEMP2)
+
+	;; dx / dy
+	div	DIVISOR,DIVIDEND	;destination / source
+	move	DIVIDEND,SLOPE		;slope = DIVISOR/DIVIDEND
+	
+	;; back to integer divide
+	moveq	#0,TEMP1
+	movei	#G_DIVCTRL,TEMP2
+	store	TEMP1,(TEMP2)
+
+	movei	#.y2_is_greater,JUMPADDR
+	cmp	LINE_Y1,LINE_Y2	
+	jump	cc,(JUMPADDR)
+	nop
+	jump	eq,(JUMPADDR)
+	nop
+
+.y1_is_greater:
+	;; YINC = -1
+	;; XINC = (dx<<16) / dy
+
+	movei	#$FFFF0000,TEMP1
+	store	TEMP1,(B_A1_INC)
+	store	SLOPE,(B_A1_FINC)
+
+	movei	#.set_registers,JUMPADDR
+	jump	t,(JUMPADDR)
+
+.y2_is_greater:
+	;; YINC = 1
+	;; XINC = (dx<<16) / dy
+
+	movei	#$00010000,TEMP1
+	store	TEMP1,(B_A1_INC)
+	store	SLOPE,(B_A1_FINC)
+	
+.set_registers:
 	move	LINE_X1,r18
-	shrq	#16,r18
 	move	LINE_Y1,r19
+	shrq	#16,r18
 	shrq	#16,r19
 	
 	BLIT_XY	r18,r19
 	store	TEMP1,(B_A1_PIXEL)
 
-	;; no fractional pixel to start
-	moveq	#0,TEMP1
+	movei	#0,TEMP1
 	store	TEMP1,(B_A1_FPIXEL)
 
-	;; get the integer slope, store it in A1_INC
-	move	SLOPE,TEMP1	
-	movei	#0xFFFF0000,TEMP2
-	and	TEMP2,TEMP1
-*	addq	#1,TEMP1
-	store	TEMP1,(B_A1_INC) ;save the integer slope to the Y increment
-	
-	;; get the fractional slope, store it in A1_FINC
-	move	SLOPE,TEMP1
-	movei	#$0000FFFF,TEMP2
-	and	TEMP2,TEMP1
-	store	TEMP1,(B_A1_FINC)
-	
-	;; 1-phrase pitch, 8-bit pixels, 320px width, XADD = 1
-	cmpq	#0,SLOPE		;is slope 0?
-	jr	eq,.slope_is_zero	;yes, add one to X per pixel instead of the slope register
-
-	;; slope is not zero
-	movei	#1,r6
-	movei	#PITCH1|PIXEL8|WID320|XADDINC,TEMP1 ;always executed
-	jr	t,.step_sign_check		    ;continue setting blitter registers
-	store	TEMP1,(B_A1_FLAGS)		    ;always executed
-
-.slope_is_zero:
-	movei	#PITCH1|PIXEL8|WID320|XADDPIX,TEMP1 ;executed if slope == 0
+	movei	#PITCH1|PIXEL8|WID320|XADDINC,TEMP1
 	store	TEMP1,(B_A1_FLAGS)
 
-.step_sign_check:
-	;; check for negative slope
-	move	LINE_Y1,TEMP1
-	move	LINE_Y2,TEMP2
-	sub	TEMP1,TEMP2
-	jr	pl,.storeStep		 ;slope positive? jump over and store.
-	movei	#$00010000,TEMP1	 ;step = (0,1). always executed.
-
-	;; if we didn't jump, then the slope is negative.
-	movei	#$FFFF0000,TEMP1 ;step = (0,-1).
-.storeStep:
-	store	TEMP1,(B_A1_STEP) ;and store the step
+	movei	#$00000000,TEMP1
+	store	TEMP1,(B_A1_STEP)
 	
-.slope_positive:
-	movei	#_line_clut_color,TEMP2
-	load	(TEMP2),TEMP1
-	store	TEMP1,(B_B_PATD)
-
-	cmpq	#0,X_DIST
-	jr	eq,.vertical
-	nop
-
-	movei	#.nothorizontal,JUMPADDR
-	cmpq	#0,Y_DIST
-	jump	ne,(JUMPADDR)
-	nop
+	move	Y_DIST,TEMP1
+	addq	#1,TEMP1
+	store	TEMP1,(B_B_COUNT)
 	
-	movei	#.horizontal,TEMP1
-	jump	t,(TEMP1)
-	nop
-	
-.vertical:
-	movei	#1,r4
-	movei	#.copy_count,JUMPADDR
-	jump	t,(JUMPADDR)
-
-	movei	#1,PX_COUNT_X
-	move	Y_DIST,PX_COUNT_Y
-	shrq	#16,PX_COUNT_Y
-
-	;; override the step for a vertical line
-	movei	#0x00000000,TEMP1
-	store	TEMP1,(B_A1_INC)
-
-	movei	#.copy_count,JUMPADDR
+	movei	#blit_line_go,JUMPADDR
 	jump	t,(JUMPADDR)
 	nop
-
-.horizontal:
-	movei	#1,r5
-	move	X_DIST,PX_COUNT_X
-	shrq	#16,PX_COUNT_X
 	
-	moveq	#1,PX_COUNT_Y
-	jr	t,.copy_count
+;;; 
+dx_greater:
+	movei	#7,r6
+
+.calc_slope:
+	move	Y_DIST,DIVIDEND
+	move	X_DIST,DIVISOR
+*	shlq	#16,DIVISOR
+	
+	;Set up for 16.16 divide
+	moveq	#1,TEMP1
+	movei	#G_DIVCTRL,TEMP2
+	store	TEMP1,(TEMP2)
+
+	;; dy / dx
+	div	DIVISOR,DIVIDEND	;destination / source
+	move	DIVIDEND,SLOPE		;slope = DIVISOR/DIVIDEND
+	
+	;; back to integer divide
+	moveq	#0,TEMP1
+	movei	#G_DIVCTRL,TEMP2
+	store	TEMP1,(TEMP2)
+
+	movei	#.y2_is_greater,JUMPADDR
+	cmp	LINE_Y1,LINE_Y2	
+	jump	cc,(JUMPADDR)
+	nop
+	jump	eq,(JUMPADDR)
+	nop
+
+;;; if y1 > y2
+.y1_greater:
+	movei	#11,r6
+	;; YINC = 65536 - ((dy<<16)/dx)
+	movei	#65536,TEMP1
+	sub	SLOPE,TEMP1
+
+	movei	#$FFFF0001,TEMP2
+	store	TEMP2,(B_A1_INC)
+
+	shlq	#16,TEMP1
+	store	TEMP1,(B_A1_FINC)
+
+	movei	#.set_registers,JUMPADDR
+	jump	t,(JUMPADDR)
+	nop
+
+.y2_is_greater:
+	movei	#12,r6
+	;; YINC = (dy<<16) / dx
+	movei	#$00000001,TEMP1 
+	store	TEMP1,(B_A1_INC) 
+
+	move	SLOPE,TEMP1
+	shlq	#16,TEMP1
+	store	TEMP1,(B_A1_FINC)
+
+.set_registers:
+	;; A1_PIXEL = LINE_X1,LINE_Y1
+	move	LINE_X1,r18
+	move	LINE_Y1,r19
+	shrq	#16,r18
+	shrq	#16,r19
+	
+	BLIT_XY	r18,r19
+	store	TEMP1,(B_A1_PIXEL)
+
+	movei	#0,TEMP1
+	store	TEMP1,(B_A1_FPIXEL)
+
+	movei	#PITCH1|PIXEL8|WID320|XADDINC,TEMP1
+	store	TEMP1,(B_A1_FLAGS)
+
+	movei	#$00000000,TEMP1
+	store	TEMP1,(B_A1_STEP)
+	
+	;; B_COUNT  = 1<<16 + X_DIST>>16
+	move	X_DIST,TEMP1
+	shrq	#16,TEMP1
+	movei	#$00010000,TEMP2
+	add	TEMP2,TEMP1
+	store	TEMP1,(B_B_COUNT)
+	
+	movei	#blit_line_go,JUMPADDR
+	jump	t,(JUMPADDR)
+	nop
+
+;;; this works
+dx_equals_dy:
+	movei	#8,r6
+
+	cmp	LINE_Y1,LINE_Y2	
+	jr	hi,.y2_is_greater
 	nop
 	
-.nothorizontal:
-	movei	#2,r5
-*	move	X_DIST,PX_COUNT_X
-*	shrq	#16,PX_COUNT_X
-	movei	#1,PX_COUNT_X
+.y1_is_greater:
+	movei	#9,r6
+	nop
+	movei	#$FFFF0001,r20
+	store	r20,(B_A1_INC)
+	nop
+	jr	t,.set_registers
+	nop
 	
-	move	Y_DIST,PX_COUNT_Y
-	shrq	#16,PX_COUNT_Y
+.y2_is_greater:
+	movei	#10,r6
+	movei	#$00010001,r20
+	store	r20,(B_A1_INC)
 	
-	addq	#1,PX_COUNT_Y
+.set_registers:
+	move	LINE_X1,r18
+	move	LINE_Y1,r19
+	shrq	#16,r18
+	shrq	#16,r19
+	
+	BLIT_XY	r18,r19
+	store	TEMP1,(B_A1_PIXEL)
 
-.copy_count:
-	BLIT_XY	PX_COUNT_X,PX_COUNT_Y
+	movei	#0,TEMP1
+	store	TEMP1,(B_A1_FPIXEL)
+
+	movei	#$00000000,TEMP1
+	store	TEMP1,(B_A1_FINC)
+
+	move	Y_DIST,TEMP1
+	addq	#1,TEMP1
+	move	TEMP1,r5
 	store	TEMP1,(B_B_COUNT)
 
-	move	B_B_COUNT,TEMP1
+blit_line_go:
+	movei	#PITCH1|PIXEL8|WID320|XADDINC,TEMP1
+	store	TEMP1,(B_A1_FLAGS)
 	
 	movei	#PATDSEL|UPDA1|UPDA1F|LFU_S,TEMP1
 	store	TEMP1,(B_B_CMD)
 
 	;; wait for blit to complete
-wait_for_blit:	
+wait_for_blitter:	
 	movei	#$F02238,TEMP1
 	load	(TEMP1),TEMP2
 	btst	#0,TEMP2
-	jr	eq,wait_for_blit ;B_STATUS bit 0. 0 if busy, 1 if set.
+	jr	eq,wait_for_blitter ;B_STATUS bit 0. 0 if busy, 1 if set.
 	
 blit_line_done:	
 	StopGPU
