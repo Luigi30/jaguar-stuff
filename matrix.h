@@ -25,6 +25,8 @@ void Matrix44_VectorProduct(Matrix44 *matrix, Vector3FX *vector, Vector3FX *dest
 void Matrix44_Translation(Vector3FX translation, Matrix44 *result);
 void Matrix44_Rotation(Vector3FX rotation, Matrix44 *result);
 
+void Matrix44_X_Rotation(Vector3FX rotation, Matrix44 *result);
+void Matrix44_Y_Rotation(Vector3FX rotation, Matrix44 *result);
 void Matrix44_Z_Rotation(Vector3FX rotation, Matrix44 *result);
 
 extern Matrix44 MATRIX_PRESET_IDENTITY;

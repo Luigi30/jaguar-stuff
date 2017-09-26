@@ -4,7 +4,7 @@ BINPATH = bin/
 OBJPATH = obj/
 
 OBJFILES = $(OBJPATH)hello.o $(OBJPATH)tetris.o $(OBJPATH)matrix.o $(OBJPATH)fixed.o $(OBJPATH)dsp_matrix.o $(OBJPATH)blit.o $(OBJPATH)screen.o $(OBJPATH)cube.o $(OBJPATH)mobj.o $(OBJPATH)images.o $(OBJPATH)dsp.o
-IMAGES = images/bee-wings1.s images/bee-wings2.s images/beelogo.s images/graphic.s images/buttbot.s images/butttext.s
+IMAGES = images/atarifont.s
 
 VJAGFOLDER = /cygdrive/e/virtualjaguar/
 
@@ -43,6 +43,9 @@ $(OBJPATH)%.o: %.jerry.s
 	$(DOCKER) $(AS) $? -I$(JAGINCLUDE) -Fvobj -mdsp -o $@
 
 #Images
+images/atarifont.s: images/atarifont.gif
+	$(CONVERT) --opt-clut --clut $? 
+
 images/bee-wings1.s: images/bee-wings1.png
 	$(CONVERT) --opt-clut --clut $?
 

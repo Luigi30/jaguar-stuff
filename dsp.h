@@ -34,6 +34,15 @@ extern uint8_t dsp_matrix_add_end[];
 extern uint8_t dsp_matrix_sub[];
 extern uint8_t dsp_matrix_sub_end[];
 
+extern uint8_t dsp_matrix_x_rotation[];
+extern uint8_t dsp_matrix_x_rotation_end[];
+
+extern uint8_t dsp_matrix_y_rotation[];
+extern uint8_t dsp_matrix_y_rotation_end[];
+
+extern uint8_t dsp_matrix_z_rotation[];
+extern uint8_t dsp_matrix_z_rotation_end[];
+
 extern Matrix44 *dsp_matrix_ptr_m1;
 extern Matrix44 *dsp_matrix_ptr_m2;
 
@@ -42,6 +51,8 @@ extern Matrix44 dsp_matrix_operand_1;
 extern Matrix44 dsp_matrix_operand_2;
 extern Matrix44 dsp_matrix_result;
 extern Vector3FX dsp_matrix_vector;
+
+extern Matrix44 *dsp_matrix_ptr_result;
 
 /* Vector operand storage */
 extern Vector3FX dsp_vector_operand_1;

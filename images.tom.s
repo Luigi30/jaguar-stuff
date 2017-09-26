@@ -1,6 +1,10 @@
 	.data
 	
 	.phrase
+_atarifont::	;1bpp
+	.include "images/atarifont.s"
+	
+	.phrase
 ; Converted with 'Jaguar image converter' (version 0.1.7) by Seb/The Removers
 _bee_pal::
 ; bee.png
@@ -32,8 +36,4 @@ _buttbot_pal::
 	.phrase
 _butttext::		;1bpp
 	.include "images/butttext.s"
-_buttbot_pal::
-; buttbot.png
-; 9 colors
-; CLUT RGB 16
-	dc.w	$4B9A, $39CE, $C9E0, $D266, $F3AC, $F431, $EDF6, $CBAB, $0180
+	

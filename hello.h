@@ -24,6 +24,9 @@ uint8_t background_frame_1[320*200];
 uint8_t *front_buffer;
 uint8_t *back_buffer;
 
+/* text buffer - 1bpp */
+uint8_t text_buffer[320*200];
+
 const uint8_t COLOR_SKYBLUE = 16;
 
 //Line drawing with the CPU and blitter
@@ -58,6 +61,7 @@ MotionObject *mobj_bee;
 MotionObject mobj_logo;
 MotionObject mobj_buttbot;
 MotionObject mobj_background;
+MotionObject mobj_font;
 
 /*
  * TOM REGISTERS

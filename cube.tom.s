@@ -76,6 +76,14 @@ _blit_line::
 	LoadValue	_line_y1_value,LINE_Y1
 	LoadValue	_line_y2_value,LINE_Y2
 
+	;; TODO: Fix the issue with B_COUNT being set wrong on mostly-vertical lines
+	;; when there is a decimal value in the slope
+	movei	#$FFFF0000,TEMP1
+*	and	TEMP1,LINE_X1
+*	and	TEMP1,LINE_X2
+*	and	TEMP1,LINE_Y1
+*	and	TEMP1,LINE_Y2
+
 	;; X1 > X2? Swap the points if so.
 	cmp	LINE_X1,LINE_X2
 	jr	hi,.calculateDistances
@@ -204,8 +212,14 @@ dy_greater:
 
 	movei	#$00000000,TEMP1
 	store	TEMP1,(B_A1_STEP)
+
+	movei	#blit_line_done,JUMPADDR
+	cmpq	#0,Y_DIST
+	jump	eq,(JUMPADDR)
 	
 	move	Y_DIST,TEMP1
+	movei	#$FFFF0000,TEMP2
+	and	TEMP2,TEMP1
 	addq	#1,TEMP1
 	store	TEMP1,(B_B_COUNT)
 	
@@ -290,6 +304,10 @@ dx_greater:
 	store	TEMP1,(B_A1_STEP)
 	
 	;; B_COUNT  = 1<<16 + X_DIST>>16
+	movei	#blit_line_done,JUMPADDR
+	cmpq	#0,X_DIST
+	jump	eq,(JUMPADDR)
+	
 	move	X_DIST,TEMP1
 	shrq	#16,TEMP1
 	movei	#$00010000,TEMP2
@@ -337,7 +355,13 @@ dx_equals_dy:
 	movei	#$00000000,TEMP1
 	store	TEMP1,(B_A1_FINC)
 
+	movei	#blit_line_done,JUMPADDR
+	cmpq	#0,Y_DIST
+	jump	eq,(JUMPADDR)
+	
 	move	Y_DIST,TEMP1
+	movei	#$FFFF0000,TEMP2
+	and	TEMP2,TEMP1
 	addq	#1,TEMP1
 	move	TEMP1,r5
 	store	TEMP1,(B_B_COUNT)

@@ -8,4 +8,6 @@ extern uint8_t beelogo[];
 extern uint8_t buttbot[];
 extern uint16_t buttbot_pal[];
 
+extern uint8_t atarifont[];
+
 #endif
