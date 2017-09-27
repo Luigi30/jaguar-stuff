@@ -5,6 +5,10 @@ _atarifont::	;1bpp
 	.include "images/atarifont.s"
 	
 	.phrase
+_atarifont8x8::	;1bpp
+	.include "images/atarifont8x8.s"
+	
+	.phrase
 ; Converted with 'Jaguar image converter' (version 0.1.7) by Seb/The Removers
 _bee_pal::
 ; bee.png

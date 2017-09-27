@@ -25,6 +25,12 @@
 	PTR_MATRIX_1	.equr	r20 ;pointer to Matrix 1
 	PTR_MATRIX_2	.equr	r21 ;pointer to Matrix 2
 	PTR_MATRIX_R	.equr	r22 ;pointer to result matrix
+
+;;; Global register defines
+	PTR_MATRIX	.equr	r29
+	
+	FIXED_ONE	.equr	r30
+	FIXED_ZERO	.equr	r31
 	
 ;;; ;;;;;;;;;;;;;;;;
 ;;; DSP matrix functions
@@ -285,6 +291,66 @@ _dsp_matrix_multiply::
 	.68000
 _dsp_matrix_multiply_end::
 
+;;; Translation.
+_dsp_matrix_translation::
+	PTR_TRANSLATION	.equr	r10
+	TRANS_X		.equr	r11
+	TRANS_Y		.equr	r12
+	TRANS_Z		.equr	r13
+	
+	movei	#$00010000,FIXED_ONE
+	movei	#$00000000,FIXED_ZERO
+
+	movei	#_dsp_matrix_ptr_result,PTR_MATRIX
+	load	(PTR_MATRIX),PTR_MATRIX	;dereference the pointer
+	
+	movei	#_dsp_matrix_vector,PTR_TRANSLATION
+	load	(PTR_TRANSLATION),TRANS_X
+	addq	#4,PTR_TRANSLATION
+	load	(PTR_TRANSLATION),TRANS_Y
+	addq	#4,PTR_TRANSLATION
+	load	(PTR_TRANSLATION),TRANS_Z
+	
+.set_matrix_values:
+	store	FIXED_ONE,(PTR_MATRIX) 	;[0][0]
+	addq	#4,PTR_MATRIX
+	store	FIXED_ZERO,(PTR_MATRIX)	;[0][1]
+	addq	#4,PTR_MATRIX
+	store	FIXED_ZERO,(PTR_MATRIX)	;[0][2]
+	addq	#4,PTR_MATRIX
+	store	TRANS_X,(PTR_MATRIX)	;[0][3]
+
+	addq	#4,PTR_MATRIX
+	store	FIXED_ZERO,(PTR_MATRIX) ;[1][0]
+	addq	#4,PTR_MATRIX
+	store	FIXED_ONE,(PTR_MATRIX)  ;[1][1]
+	addq	#4,PTR_MATRIX
+	store	FIXED_ZERO,(PTR_MATRIX) ;[1][2]
+	addq	#4,PTR_MATRIX
+	store	TRANS_Y,(PTR_MATRIX)    ;[1][3]
+
+	addq	#4,PTR_MATRIX
+	store	FIXED_ZERO,(PTR_MATRIX) ;[2][0]
+	addq	#4,PTR_MATRIX
+	store	FIXED_ZERO,(PTR_MATRIX) ;[2][1]
+	addq	#4,PTR_MATRIX
+	store	FIXED_ONE,(PTR_MATRIX)  ;[2][2]
+	addq	#4,PTR_MATRIX
+	store	TRANS_Z,(PTR_MATRIX)	;[2][3]
+
+	addq	#4,PTR_MATRIX
+	store	FIXED_ZERO,(PTR_MATRIX) ;[3][0]
+	addq	#4,PTR_MATRIX
+	store	FIXED_ZERO,(PTR_MATRIX) ;[3][1]
+	addq	#4,PTR_MATRIX
+	store	FIXED_ZERO,(PTR_MATRIX) ;[3][2]
+	addq	#4,PTR_MATRIX
+	store	FIXED_ONE,(PTR_MATRIX) 	;[3][3]
+	
+	StopDSP
+	nop
+	.68000
+_dsp_matrix_translation_end::
 ;;; Rotations.
 	.macro	LoadTrigTables
 	    movei	_FIXED_SINE_TABLE,TEMP1
@@ -295,8 +361,7 @@ _dsp_matrix_multiply_end::
 	.endm
 	
 	PTR_ORIENTATION		.equr	r10
-	PTR_MATRIX		.equr	r11
-	DEGREES			.equr	r12
+	DEGREES			.equr	r11
 
 	MATRIX_OFFSET		.equr	r14
 	TRIG_TABLE_OFFSET	.equr	r15
@@ -309,9 +374,6 @@ _dsp_matrix_multiply_end::
 
 	SIN_DEGREES		.equr	r20
 	COS_DEGREES		.equr	r21
-
-	FIXED_ONE		.equr	r30
-	FIXED_ZERO		.equr	r31
 	
 _dsp_matrix_x_rotation::
 	;; Create a rotation matrix for the X axis.
@@ -522,6 +584,13 @@ _dsp_matrix_ptr_result::dcb.l	1            ;pointer to the matrix we want to wri
 _dsp_vector_operand_1:: dcb.l	3,$11223344 ;vector operand 1
 _dsp_vector_operand_2:: dcb.l	3,$11223344 ;vector operand 2
 _dsp_vector_result::	dcb.l	3,$11223344 ;vector result
+
+	;; Constants
+CONST_MATRIX_IDENTITY:
+	dc.l	$00010000,$00000000,$00000000,$00000000
+	dc.l	$00000000,$00010000,$00000000,$00000000
+	dc.l	$00000000,$00000000,$00010000,$00000000
+	dc.l	$00000000,$00000000,$00000000,$00010000
 	
 	.68000
 

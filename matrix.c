@@ -74,6 +74,13 @@ inline FIXED_32 degreesToRadians( FIXED_32 degrees )
 //TODO: Do all this math on the DSP
 void Matrix44_Translation(Vector3FX translation, Matrix44 *result)
 {
+  /*
+  jag_dsp_wait();
+  memcpy(&dsp_matrix_vector, &translation, sizeof(Vector3FX));
+  dsp_matrix_ptr_result = result;
+
+  DSP_START(dsp_matrix_translation);
+  */
   jag_gpu_wait();
 	
   Matrix44_Identity(result);

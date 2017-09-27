@@ -9,5 +9,6 @@ extern uint8_t buttbot[];
 extern uint16_t buttbot_pal[];
 
 extern uint8_t atarifont[];
+extern uint8_t atarifont8x8[];
 
 #endif

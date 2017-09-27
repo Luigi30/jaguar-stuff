@@ -31,40 +31,17 @@ uint16_t jag_custom_interrupt_handler()
       mobj_bee->graphic->p0.height = 32;
       mobj_buttbot.graphic->p0.height = 32;
       mobj_background.graphic->p0.height = 200;
-      mobj_font.graphic->p0.height = 128;
+      mobj_font.graphic->p0.height = 200;
 
       mobj_bee->graphic->p0.data   = (uint32_t)mobj_bee->currentAnimation->pixel_data >> 3;	  
       mobj_buttbot.graphic->p0.data = (uint32_t)mobj_buttbot.currentAnimation->pixel_data >> 3;
       mobj_background.graphic->p0.data = (uint32_t)front_buffer >> 3;
-      mobj_font.graphic->p0.data = (uint32_t)atarifont >> 3;
+      mobj_font.graphic->p0.data = (uint32_t)text_buffer >> 3;
 
       MMIO16(INT2) = 0;
       return C_VIDCLR;
     }
   return 0;
-}
-
-/* Font blitting */
-void BLIT_8x8_font_glyph(uint8_t *destination, uint8_t x, uint8_t y, uint8_t *source, uint8_t c)
-{
-  //Blit a glyph from an 8x8 font sheet.
-  //A sheet is 128x128px = 16x16 glyphs.
-
-  MMIO32(A1_BASE)   = (long)destination;
-  MMIO32(A1_PIXEL)  = BLIT_XY(x, y);
-  MMIO32(A1_FPIXEL) = 0;
-  MMIO32(A1_INC)    = BLIT_XY(1, 0);
-  MMIO32(A1_FINC)   = 0;
-  MMIO32(A1_FLAGS)  = PITCH1 | PIXEL1 | WID320 | XADDPIX | YADD0;
-  MMIO32(A1_STEP)   = BLIT_XY(128-8, 0);
-
-  MMIO32(A2_BASE)   = (long)source;
-  MMIO32(A2_PIXEL)  = BLIT_XY(0, 0);
-  MMIO32(A2_STEP)   = BLIT_XY(0, 1);
-  MMIO32(A2_FLAGS)  = PITCH1 | PIXEL1 | WID320 | XADDPIX | YADD0;
-  
-  MMIO32(B_COUNT)   = BLIT_XY(8, 8);
-  MMIO32(B_CMD)     = SRCEN | UPDA1 | LFU_REPLACE;
 }
 
 void gpu_create_scanline_table()
@@ -92,12 +69,33 @@ void gpu_blit_line(uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2, uint32_t 
   jag_gpu_go((uint32_t *)G_RAM, 0);
 }
 
+void BLIT_16x16_text_string(uint8_t *destination, uint8_t x, uint8_t y, char *str)
+{
+  for(int i=0;i<strlen(str);i++)
+    {      
+      BLIT_16x16_font_glyph(destination, x, y, atarifont, str[i]);
+      x += 16;
+    }
+}
+
+void BLIT_8x8_text_string(uint8_t *destination, uint8_t x, uint8_t y, char *str)
+{
+  for(int i=0;i<strlen(str);i++)
+    {      
+      BLIT_8x8_font_glyph(destination, x, y, atarifont8x8, str[i]);
+      x += 8;
+    }
+}
+
 int main() {
   jag_console_hide();
   front_buffer = background_frame_0;
   back_buffer = background_frame_1;
   
   DSP_LOAD_MATRIX_PROGRAM();
+
+  BLIT_16x16_text_string(text_buffer, 32, 32, "Hello Twitter!");
+  BLIT_8x8_text_string(text_buffer, 48, 64, "@LuigiThirty is cool");
   
   //Kick off these calculations while setting up the CPU
   gpu_create_scanline_table();
@@ -131,10 +129,10 @@ int main() {
   {
     mobj_font.graphic = calloc(1,sizeof(op_bmp_object));
     mobj_font.objType = BITOBJ;
-    mobj_font.position.x = 48;
-    mobj_font.position.y = 160;
-    mobj_font.pxWidth = 128;
-    mobj_font.pxHeight = 128;
+    mobj_font.position.x = 19;
+    mobj_font.position.y = 80;
+    mobj_font.pxWidth = 320;
+    mobj_font.pxHeight = 200;
     
     mobj_font.animations = NULL;
     
@@ -142,12 +140,12 @@ int main() {
     mobj_font.graphic->p0.ypos	= mobj_font.position.y;      /* YPOS = Y position on screen "in half-lines" */
     mobj_font.graphic->p0.height = mobj_font.pxHeight;	/* in pixels */
     mobj_font.graphic->p0.link	= (uint32_t)stopobj >> 3;	/* link to next object */
-    mobj_font.graphic->p0.data	= (uint32_t)atarifont >> 3;	/* ptr to pixel data */
+    mobj_font.graphic->p0.data	= (uint32_t)text_buffer >> 3;	/* ptr to pixel data */
     mobj_font.graphic->p1.xpos	= mobj_font.position.x;      /* X position on screen, -2048 to 2047 */
     mobj_font.graphic->p1.depth	= O_DEPTH1 >> 12;		/* pixel depth of object */
     mobj_font.graphic->p1.pitch	= 1;				/* 8 * PITCH is added to each fetch */
-    mobj_font.graphic->p1.dwidth= mobj_font.pxWidth / 32;	/* pixel data width in 8-byte phrases */
-    mobj_font.graphic->p1.iwidth= mobj_font.pxWidth / 32;	/* image width in 8-byte phrases, for clipping */
+    mobj_font.graphic->p1.dwidth= mobj_font.pxWidth / 64;	/* pixel data width in 8-byte phrases */
+    mobj_font.graphic->p1.iwidth= mobj_font.pxWidth / 64;	/* image width in 8-byte phrases, for clipping */
     /* these are divided by 2 because bpp = 2 phrases per line */	
     mobj_font.graphic->p1.release= 0;				/* bus mastering, set to 1 when low-depth */
     mobj_font.graphic->p1.trans  = 1;				/* makes color 0 transparent */
@@ -167,7 +165,7 @@ int main() {
     mobj_background.graphic->p0.ypos	= mobj_background.position.y;   /* YPOS = Y position on screen "in half-lines" */
     mobj_background.graphic->p0.height  = mobj_background.pxHeight;	/* in pixels */
     mobj_background.graphic->p0.link	= (uint32_t)mobj_font.graphic >> 3;	/* link to next object */
-    mobj_background.graphic->p0.link	= (uint32_t)stopobj >> 3;	/* link to next object */
+    //mobj_background.graphic->p0.link	= (uint32_t)stopobj >> 3;	/* link to next object */
     mobj_background.graphic->p0.data	= (uint32_t)front_buffer >> 3;	/* ptr to pixel data */
     
     mobj_background.graphic->p1.xpos	= mobj_background.position.x;      /* X position on screen, -2048 to 2047 */

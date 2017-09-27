@@ -1,14 +1,2 @@
 ### Starting build.
-# Target: converter.ml.depends, tags: { extension:ml, file:converter.ml, ocaml, ocamldep, quiet }
-ocamlfind ocamldep -modules converter.ml > converter.ml.depends
-# Target: tga2cry.ml.depends, tags: { extension:ml, file:tga2cry.ml, ocaml, ocamldep, quiet }
-ocamlfind ocamldep -modules tga2cry.ml > tga2cry.ml.depends
-# Target: tga2cry.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:tga2cry.cmo, file:tga2cry.ml, implem, ocaml, quiet }
-ocamlfind ocamlc -c -o tga2cry.cmo tga2cry.ml
-# Target: converter.cmo, tags: { byte, compile, extension:cmo, extension:ml, file:converter.cmo, file:converter.ml, implem, ocaml, quiet }
-ocamlfind ocamlc -c -o converter.cmo converter.ml
-+ ocamlfind ocamlc -c -o converter.cmo converter.ml
-File "converter.ml", line 18, characters 5-11:
-Error: Unbound module Images
-Command exited with code 2.
 # Compilation unsuccessful.

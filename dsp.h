@@ -34,6 +34,9 @@ extern uint8_t dsp_matrix_add_end[];
 extern uint8_t dsp_matrix_sub[];
 extern uint8_t dsp_matrix_sub_end[];
 
+extern uint8_t dsp_matrix_translation[];
+extern uint8_t dsp_matrix_translation_end[];
+
 extern uint8_t dsp_matrix_x_rotation[];
 extern uint8_t dsp_matrix_x_rotation_end[];
 
